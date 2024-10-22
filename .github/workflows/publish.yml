@@ -1,0 +1,85 @@
+name: Publish
+
+on:
+  push:
+    branches:
+      - 'release-*'
+
+jobs:
+  kmmbridge:
+    permissions:
+      contents: write
+      packages: write
+    uses: touchlab/KMMBridgeGithubWorkflow/.github/workflows/faktorybuildautoversion.yml@v1.1
+    with:
+      jvmVersion: 17
+      versionBaseProperty: "LIBRARY_VERSION"
+
+  publish:
+    needs: kmmbridge
+    permissions:
+      contents: write
+      packages: write
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Process Tag
+        id: process_tag
+        run: |
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          TAG_NAME=${BRANCH_NAME#release-}
+          echo "Version pushed: $TAG_NAME"
+          echo "TAG_NAME=$TAG_NAME" >> $GITHUB_OUTPUT
+
+      - name: Setup Java
+        uses: actions/setup-java@v1
+        with:
+          java-version: 17
+
+      - name: Generate config.json
+        run: |
+          echo '{
+          "host": "${{ secrets.PB_URL }}",
+          "admin_email": "${{ secrets.PB_ADMIN_EMAIL }}",
+          "admin_password": "${{ secrets.PB_ADMIN_PASSWORD }}"
+          }' > shared/src/desktopTest/resources/config.json
+
+      - name: Unzip PocketBase Data
+        run: |
+          unzip pb.zip -d ./pb
+
+      - name: Download PocketBase
+        run: |
+          VERSION="0.22.22"
+          DOWNLOAD_URL="https://github.com/pocketbase/pocketbase/releases/download/v${VERSION}/pocketbase_${VERSION}_darwin_arm64.zip"
+          curl -L -o pocketbase.zip $DOWNLOAD_URL
+          unzip pocketbase.zip
+          chmod +x pocketbase
+
+      - name: Run PocketBase
+        run: |
+          ./pocketbase serve --dir ./pb/pb/pb_data --migrationsDir ./pb/pb/pb_migrations &
+
+      - name: Verify PocketBase is Running
+        run: |
+          sleep 5
+          curl http://localhost:8090/api/health
+
+      - name: Gradle
+        uses: gradle/gradle-build-action@v2
+        with:
+          gradle-version: 8.7
+          arguments: build -PtagName=${{ env.TAG_NAME }}
+        env:
+          TAG_NAME: ${{ steps.process_tag.outputs.TAG_NAME }}
+
+      - name: Publish
+        run: gradle check publish -PgprBuild=true -PtagName=${{ env.TAG_NAME }} --no-configure-on-demand --no-daemon
+        env:
+          ORG_GRADLE_PROJECT_githubUsername: ${{ github.actor }}
+          ORG_GRADLE_PROJECT_githubPassword: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ steps.process_tag.outputs.TAG_NAME }}
