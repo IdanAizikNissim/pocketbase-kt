@@ -90,7 +90,7 @@ class AdminAsyncAuthStore(
         clear = clear,
         initial = initial,
     ) {
-    private val tokenModelSerializer = TokenModel.serializer(serializer)
+    private val tokenModelSerializer by lazy { TokenModel.serializer(serializer) }
 
     override fun extractModel(rawModel: JsonObject): AdminModel? =
         if (rawModel.containsKey("id")) {
@@ -113,7 +113,7 @@ class RecordAsyncAuthStore<T : RecordModel>(
         clear = clear,
         initial = initial,
     ) {
-    private val tokenModelSerializer = TokenModel.serializer(serializer)
+    private val tokenModelSerializer by lazy { TokenModel.serializer(serializer) }
 
     override fun extractModel(rawModel: JsonObject): T? =
         if (rawModel.containsKey("collectionId") &&
