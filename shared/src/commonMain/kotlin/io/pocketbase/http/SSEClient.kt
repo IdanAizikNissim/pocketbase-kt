@@ -6,6 +6,7 @@ import io.ktor.sse.ServerSentEvent
 import io.pocketbase.ClientConfig
 import io.pocketbase.auth.AuthStore
 import kotlinx.coroutines.flow.flow
+import kotlin.time.Duration.Companion.milliseconds
 
 internal class SSEClient(
     private val config: ClientConfig,
@@ -18,7 +19,7 @@ internal class SSEClient(
     val isConnected
         get() = client != null
 
-    suspend fun connect(url: String) =
+    fun connect(url: String) =
         flow {
             disconnect()
 
@@ -33,6 +34,7 @@ internal class SSEClient(
 
             client?.sse(
                 path = url,
+                reconnectionTime = config.reconnectionTime.milliseconds,
             ) {
                 incoming.collect { msg ->
                     when (msg.event) {
