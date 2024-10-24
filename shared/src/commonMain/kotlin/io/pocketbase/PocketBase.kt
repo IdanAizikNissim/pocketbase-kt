@@ -51,15 +51,14 @@ class PocketBase(
         idOrName: String,
         cls: KClass<T>,
     ): RecordService<T> {
-        val key = "${idOrName}_${cls.simpleName}"
         val service =
-            (recordServices[key] as? RecordService<T>) ?: RecordService(
+            (recordServices[idOrName] as? RecordService<T>) ?: RecordService(
                 client = this,
                 cls = cls,
                 collectionIdOrName = idOrName,
             )
 
-        recordServices[key] = service
+        recordServices[idOrName] = service
 
         return service
     }
