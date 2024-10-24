@@ -1,12 +1,14 @@
 package io.pocketbase
 
 import io.pocketbase.http.Protocol
+import kotlin.time.Duration.Companion.seconds
 
 data class ClientConfig(
     val baseUrl: String,
     val protocol: Protocol = Protocol.HTTP,
     val port: Int?,
     val lang: String = "en-US",
+    val reconnectionTime: Long = 30.seconds.inWholeMilliseconds,
 ) {
     companion object {
         fun from(url: String): ClientConfig {
