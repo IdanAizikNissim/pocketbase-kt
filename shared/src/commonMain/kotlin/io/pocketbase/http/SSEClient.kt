@@ -32,14 +32,14 @@ internal class SSEClient(
                     protocol = config.protocol,
                     port = config.port,
                     lang = config.lang,
-                    socketTimeout = config.socketTimeout,
+                    httpTimeout = config.httpTimeout,
                     logLevel = config.logLevel,
                     authStore = authStore,
                 )
 
             client?.sse(
                 path = url,
-                reconnectionTime = config.reconnectionTime.milliseconds,
+                reconnectionTime = config.sseReconnectionTime.milliseconds,
                 showRetryEvents = true,
             ) {
                 incoming.collect { msg ->

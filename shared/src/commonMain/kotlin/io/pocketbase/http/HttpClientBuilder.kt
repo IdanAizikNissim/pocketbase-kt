@@ -1,6 +1,7 @@
 package io.pocketbase.http
 
 import io.ktor.client.HttpClient
+import io.ktor.client.plugins.HttpRequestRetry
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
@@ -18,7 +19,7 @@ internal class HttpClientBuilder(
         protocol: Protocol,
         port: Int?,
         lang: String,
-        socketTimeout: Long,
+        httpTimeout: Long,
         logLevel: LogLevel,
         authStore: AuthStore,
     ): HttpClient =
@@ -26,8 +27,15 @@ internal class HttpClientBuilder(
             with(config) {
                 install(SSE)
 
+                install(HttpRequestRetry) {
+                    retryOnException(retryOnTimeout = true)
+                    exponentialDelay()
+                }
+
                 install(HttpTimeout) {
-                    socketTimeoutMillis = socketTimeout
+                    requestTimeoutMillis = httpTimeout
+                    connectTimeoutMillis = httpTimeout
+                    socketTimeoutMillis = httpTimeout
                 }
 
                 install(ContentNegotiation) {
