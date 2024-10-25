@@ -1,5 +1,6 @@
 package io.pocketbase
 
+import io.pocketbase.http.LogLevel
 import io.pocketbase.http.Protocol
 import kotlin.time.Duration.Companion.seconds
 
@@ -8,7 +9,9 @@ data class ClientConfig(
     val protocol: Protocol = Protocol.HTTP,
     val port: Int?,
     val lang: String = "en-US",
-    val reconnectionTime: Long = 30.seconds.inWholeMilliseconds,
+    val reconnectionTime: Long = 3.seconds.inWholeMilliseconds,
+    val maxReconnectionRetries: Long = Long.MAX_VALUE,
+    val logLevel: LogLevel = LogLevel.NONE,
 ) {
     companion object {
         fun from(url: String): ClientConfig {

@@ -31,6 +31,7 @@ internal class HttpClient(
             protocol = config.protocol,
             port = config.port,
             lang = config.lang,
+            logLevel = config.logLevel,
             authStore = authStore,
         )
 

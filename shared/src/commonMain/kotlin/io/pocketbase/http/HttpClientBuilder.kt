@@ -3,7 +3,6 @@ package io.pocketbase.http
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
-import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.plugins.sse.SSE
 import io.ktor.client.request.header
@@ -18,6 +17,7 @@ internal class HttpClientBuilder(
         protocol: Protocol,
         port: Int?,
         lang: String,
+        logLevel: LogLevel,
         authStore: AuthStore,
     ): HttpClient =
         factory.create { config ->
@@ -29,7 +29,7 @@ internal class HttpClientBuilder(
                 }
 
                 install(Logging) {
-                    level = LogLevel.ALL
+                    level = logLevel.toKtorLogLevel()
                 }
 
                 defaultRequest {
@@ -47,3 +47,12 @@ internal class HttpClientBuilder(
             }
         }
 }
+
+internal fun LogLevel.toKtorLogLevel(): io.ktor.client.plugins.logging.LogLevel =
+    when (this) {
+        LogLevel.ALL -> io.ktor.client.plugins.logging.LogLevel.ALL
+        LogLevel.HEADERS -> io.ktor.client.plugins.logging.LogLevel.HEADERS
+        LogLevel.BODY -> io.ktor.client.plugins.logging.LogLevel.BODY
+        LogLevel.INFO -> io.ktor.client.plugins.logging.LogLevel.INFO
+        LogLevel.NONE -> io.ktor.client.plugins.logging.LogLevel.NONE
+    }
