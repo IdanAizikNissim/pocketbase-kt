@@ -32,6 +32,7 @@ internal class SSEClient(
                     protocol = config.protocol,
                     port = config.port,
                     lang = config.lang,
+                    socketTimeout = config.socketTimeout,
                     logLevel = config.logLevel,
                     authStore = authStore,
                 )
