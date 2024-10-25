@@ -9,6 +9,7 @@ data class ClientConfig(
     val protocol: Protocol = Protocol.HTTP,
     val port: Int?,
     val lang: String = "en-US",
+    val socketTimeout: Long = 60.seconds.inWholeMilliseconds,
     val reconnectionTime: Long = 3.seconds.inWholeMilliseconds,
     val maxReconnectionRetries: Long = Long.MAX_VALUE,
     val logLevel: LogLevel = LogLevel.NONE,
