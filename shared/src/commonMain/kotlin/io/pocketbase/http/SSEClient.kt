@@ -42,18 +42,20 @@ internal class SSEClient(
                 reconnectionTime = config.sseReconnectionTime.milliseconds,
                 showRetryEvents = true,
             ) {
-                incoming.collect { msg ->
-                    if (msg.retry != null) {
-                        reconnect(url, msg.retry ?: 0)
-                    } else {
-                        when (msg.event) {
-                            "PB_CONNECT" -> {
-                                clientId = msg.id
-                                Incoming.PBConnect(clientId)
+                while (true) {
+                    incoming.collect { msg ->
+                        if (msg.retry != null) {
+                            reconnect(url, msg.retry ?: 0)
+                        } else {
+                            when (msg.event) {
+                                "PB_CONNECT" -> {
+                                    clientId = msg.id
+                                    Incoming.PBConnect(clientId)
+                                }
+                                else -> Incoming.Message(msg)
+                            }.let {
+                                emit(it)
                             }
-                            else -> Incoming.Message(msg)
-                        }.let {
-                            emit(it)
                         }
                     }
                 }

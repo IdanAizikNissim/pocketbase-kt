@@ -52,6 +52,7 @@ kotlin {
         androidMain.dependencies {
         }
         iosMain.dependencies {
+            implementation(libs.ktor.client.darwin)
         }
 
         val desktopMain by getting
