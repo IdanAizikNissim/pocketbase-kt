@@ -1,4 +1,3 @@
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import java.lang.System.getenv
 
 plugins {
@@ -63,9 +62,15 @@ kotlin {
         }
     }
 
-    @OptIn(ExperimentalKotlinGradlePluginApi::class)
-    compilerOptions {
-        freeCompilerArgs.add("-Xexpect-actual-classes")
+    targets.all {
+        compilations.all {
+            kotlinOptions {
+                freeCompilerArgs =
+                    listOf(
+                        "-Xexpect-actual-classes",
+                    )
+            }
+        }
     }
 
     androidTarget {
