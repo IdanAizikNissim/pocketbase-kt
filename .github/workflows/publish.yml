@@ -12,7 +12,7 @@ jobs:
       packages: write
     uses: touchlab/KMMBridgeGithubWorkflow/.github/workflows/faktorybuildautoversion.yml@v1.1
     with:
-      jvmVersion: 8
+      jvmVersion: 17
       versionBaseProperty: "LIBRARY_VERSION"
 
   publish:
