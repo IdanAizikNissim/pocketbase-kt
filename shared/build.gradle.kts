@@ -66,6 +66,9 @@ kotlin {
     @OptIn(ExperimentalKotlinGradlePluginApi::class)
     compilerOptions {
         freeCompilerArgs.add("-Xexpect-actual-classes")
+        jvm {
+            version = JavaVersion.VERSION_1_8
+        }
     }
 
     androidTarget {
