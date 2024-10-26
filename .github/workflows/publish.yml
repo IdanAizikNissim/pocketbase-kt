@@ -6,17 +6,17 @@ on:
       - 'release-*'
 
 jobs:
-#  kmmbridge:
-#    permissions:
-#      contents: write
-#      packages: write
-#    uses: touchlab/KMMBridgeGithubWorkflow/.github/workflows/faktorybuildautoversion.yml@v1.1
-#    with:
-#      jvmVersion: 17
-#      versionBaseProperty: "LIBRARY_VERSION"
+  kmmbridge:
+    permissions:
+      contents: write
+      packages: write
+    uses: touchlab/KMMBridgeGithubWorkflow/.github/workflows/faktorybuildautoversion.yml@v1.1
+    with:
+      jvmVersion: 17
+      versionBaseProperty: "LIBRARY_VERSION"
 
   publish:
-#    needs: kmmbridge
+    needs: kmmbridge
     permissions:
       contents: write
       packages: write
