@@ -1,4 +1,3 @@
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import java.lang.System.getenv
 
 plugins {
@@ -63,9 +62,15 @@ kotlin {
         }
     }
 
-    @OptIn(ExperimentalKotlinGradlePluginApi::class)
-    compilerOptions {
-        freeCompilerArgs.add("-Xexpect-actual-classes")
+    targets.all {
+        compilations.all {
+            kotlinOptions {
+                freeCompilerArgs =
+                    listOf(
+                        "-Xexpect-actual-classes",
+                    )
+            }
+        }
     }
 
     androidTarget {
@@ -77,17 +82,12 @@ android {
     namespace = "io.pocketbase"
     compileSdk = 34
     defaultConfig {
-        minSdk = 21
+        minSdk = 24
     }
     compileOptions {
-        isCoreLibraryDesugaringEnabled = true
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
-}
-
-dependencies {
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.3")
 }
 
 group = project.property("GROUP") as String
