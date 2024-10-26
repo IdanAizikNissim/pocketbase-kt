@@ -138,3 +138,9 @@ if (project.hasProperty("gprBuild")) {
         spm()
     }
 }
+
+publishing {
+    repositories {
+        mavenLocal()
+    }
+}
