@@ -1,3 +1,4 @@
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import java.lang.System.getenv
 
 plugins {
@@ -35,6 +36,7 @@ kotlin {
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.datetime)
             implementation(libs.ktor.core)
+            implementation(libs.ktor.client.cio)
             implementation(libs.ktor.client.logging)
             implementation(libs.ktor.client.content.negotiation)
             implementation(libs.ktor.serialization.kotlinx.json)
@@ -49,30 +51,21 @@ kotlin {
             implementation(libs.ktor.client.test)
         }
         androidMain.dependencies {
-            implementation(libs.ktor.client.okhttp)
         }
         iosMain.dependencies {
-            implementation(libs.ktor.client.darwin)
         }
 
         val desktopMain by getting
         desktopMain.dependencies {
-            implementation(libs.ktor.client.cio)
         }
         val desktopTest by getting
         desktopTest.dependencies {
         }
     }
 
-    targets.all {
-        compilations.all {
-            kotlinOptions {
-                freeCompilerArgs =
-                    listOf(
-                        "-Xexpect-actual-classes",
-                    )
-            }
-        }
+    @OptIn(ExperimentalKotlinGradlePluginApi::class)
+    compilerOptions {
+        freeCompilerArgs.add("-Xexpect-actual-classes")
     }
 
     androidTarget {
@@ -87,9 +80,14 @@ android {
         minSdk = 21
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        isCoreLibraryDesugaringEnabled = true
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
     }
+}
+
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.3")
 }
 
 group = project.property("GROUP") as String

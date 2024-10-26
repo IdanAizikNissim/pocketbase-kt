@@ -25,7 +25,9 @@ internal class HttpClientBuilder(
     ): HttpClient =
         factory.create { config ->
             with(config) {
-                install(SSE)
+                install(SSE) {
+                    showRetryEvents()
+                }
 
                 install(HttpRequestRetry) {
                     retryOnException(retryOnTimeout = true)
