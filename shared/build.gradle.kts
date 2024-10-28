@@ -50,6 +50,7 @@ kotlin {
             implementation(libs.ktor.client.test)
         }
         androidMain.dependencies {
+            implementation(libs.ktor.client.android)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)
@@ -136,5 +137,11 @@ if (project.hasProperty("gprBuild")) {
         frameworkName.set("PocketBase")
         mavenPublishArtifacts()
         spm()
+    }
+}
+
+publishing {
+    repositories {
+        mavenLocal()
     }
 }
