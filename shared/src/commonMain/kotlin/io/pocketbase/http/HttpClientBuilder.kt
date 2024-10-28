@@ -1,7 +1,6 @@
 package io.pocketbase.http
 
 import io.ktor.client.HttpClient
-import io.ktor.client.plugins.HttpRequestRetry
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
@@ -25,14 +24,7 @@ internal class HttpClientBuilder(
     ): HttpClient =
         factory.create { config ->
             with(config) {
-                install(SSE) {
-                    showRetryEvents()
-                }
-
-                install(HttpRequestRetry) {
-                    retryOnException(retryOnTimeout = true)
-                    exponentialDelay()
-                }
+                install(SSE)
 
                 install(HttpTimeout) {
                     requestTimeoutMillis = httpTimeout

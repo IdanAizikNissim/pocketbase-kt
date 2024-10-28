@@ -5,8 +5,12 @@ import io.ktor.client.plugins.sse.sse
 import io.ktor.sse.ServerSentEvent
 import io.pocketbase.ClientConfig
 import io.pocketbase.auth.AuthStore
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.isActive
+import kotlin.coroutines.CoroutineContext
 import kotlin.time.Duration.Companion.milliseconds
 
 internal class SSEClient(
@@ -40,24 +44,33 @@ internal class SSEClient(
             client?.sse(
                 path = url,
                 reconnectionTime = config.sseReconnectionTime.milliseconds,
-                showRetryEvents = true,
             ) {
-                while (true) {
-                    incoming.collect { msg ->
-                        if (msg.retry != null) {
-                            reconnect(url, msg.retry ?: 0)
-                        } else {
+                try {
+                    while (true) {
+                        if (!this.isActive) {
+                            disconnect(
+                                context = currentCoroutineContext(),
+                            )
+                            return@sse
+                        }
+
+                        incoming.collect { msg ->
                             when (msg.event) {
                                 "PB_CONNECT" -> {
                                     clientId = msg.id
                                     Incoming.PBConnect(clientId)
                                 }
+
                                 else -> Incoming.Message(msg)
                             }.let {
                                 emit(it)
                             }
                         }
                     }
+                } catch (e: Exception) {
+                    disconnect(
+                        context = currentCoroutineContext(),
+                    )
                 }
             }
         }
@@ -68,19 +81,16 @@ internal class SSEClient(
         clientId = null
     }
 
-    private suspend fun reconnect(
-        url: String,
-        retry: Long,
-    ) {
-        if (retryAttempts > config.maxReconnectionRetries) {
-            disconnect()
-            return
-        }
+    private fun disconnect(context: CoroutineContext) {
+        disconnect()
 
-        delay(retry)
-        retryAttempts++
-
-        connect(url)
+        val shouldReconnect = retryAttempts++ <= config.maxReconnectionRetries
+        context.cancel(
+            cause =
+                SSEClientCancellationException(
+                    shouldReconnect = shouldReconnect,
+                ),
+        )
     }
 }
 
@@ -89,3 +99,7 @@ internal sealed interface Incoming {
 
     data class Message(val message: ServerSentEvent) : Incoming
 }
+
+internal data class SSEClientCancellationException(
+    val shouldReconnect: Boolean,
+) : CancellationException("SSE Client Cancellation")

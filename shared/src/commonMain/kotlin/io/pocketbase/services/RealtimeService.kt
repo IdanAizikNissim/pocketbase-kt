@@ -6,14 +6,15 @@ import io.pocketbase.PocketBase
 import io.pocketbase.dtos.SubmitSubscriptionsRequest
 import io.pocketbase.http.Incoming
 import io.pocketbase.http.SSEClient
+import io.pocketbase.http.SSEClientCancellationException
 import io.pocketbase.http.json
 import io.pocketbase.utils.encoder.DefaultUrlEncoder
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -28,9 +29,6 @@ internal class RealtimeService(
     private val subscriptions = mutableMapOf<String, List<SubscriptionFunc>>()
     private val hasNonEmptyTopic
         get() = subscriptions.values.any { it.isNotEmpty() }
-
-    internal val clientId
-        get() = sseClient.clientId
 
     suspend fun subscribe(
         topic: String,
@@ -81,29 +79,16 @@ internal class RealtimeService(
                 suspend { unsubscribeByTopicAndListener(topic, listener) }
             }
         } else {
-            sseClient
-                .connect("/api/realtime")
-                .onEach {
-                    when (it) {
-                        is Incoming.Message -> {
-                            subscriptions[it.message.event]?.forEach { sub ->
-                                sub(it.message)
-                            }
-                        }
-                        is Incoming.PBConnect -> {
-                            try {
-                                submitSubscriptions(it.clientId)
-                                deferred.complete {
-                                    suspend { unsubscribeByTopicAndListener(topic, listener) }
-                                }
-                            } catch (e: Exception) {
-                                sseClient.disconnect()
-                                deferred.completeExceptionally(e)
-                            }
-                        }
+            connectSSEClient(
+                onConnect = {
+                    deferred.complete {
+                        suspend { unsubscribeByTopicAndListener(topic, listener) }
                     }
-                }
-                .launchIn(CoroutineScope(Dispatchers.Default))
+                },
+                onException = {
+                    deferred.completeExceptionally(it)
+                },
+            )
         }
 
         return deferred.await()
@@ -206,8 +191,46 @@ internal class RealtimeService(
             )
         }
     }
+
+    private fun connectSSEClient() {
+        connectSSEClient(
+            onConnect = {},
+            onException = {},
+        )
+    }
+
+    private fun connectSSEClient(
+        onConnect: () -> Unit,
+        onException: (e: Exception) -> Unit,
+    ) = sseClient
+        .connect("/api/realtime")
+        .onEach {
+            when (it) {
+                is Incoming.Message -> {
+                    subscriptions[it.message.event]?.forEach { sub ->
+                        sub(it.message)
+                    }
+                }
+                is Incoming.PBConnect -> {
+                    try {
+                        submitSubscriptions(it.clientId)
+                        onConnect()
+                    } catch (e: Exception) {
+                        sseClient.disconnect()
+                        onException(e)
+                    }
+                }
+            }
+        }
+        .launchIn(CoroutineScope(Dispatchers.IO))
+        .invokeOnCompletion {
+            if (it is SSEClientCancellationException && it.shouldReconnect) {
+                connectSSEClient()
+            }
+        }
 }
 
+@Suppress("UNCHECKED_CAST")
 private fun Map<String, Any?>.toJsonObject(): JsonObject =
     buildJsonObject {
         for ((key, value) in this@toJsonObject) {
