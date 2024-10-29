@@ -20,7 +20,7 @@ jobs:
     permissions:
       contents: write
       packages: write
-    runs-on: self-hosted
+    runs-on: macos-14
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -39,6 +39,10 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 17
+
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: 15.4
 
       - name: Generate config.json
         run: |

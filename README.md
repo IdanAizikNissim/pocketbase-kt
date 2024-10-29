@@ -30,7 +30,7 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("io.pocketbase:pocketbase:0.1.3")
+                implementation("io.pocketbase:pocketbase:0.1.10")
             }
         }
     }
