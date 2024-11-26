@@ -130,7 +130,7 @@ class SettingsService internal constructor(
     private fun Meta.toJsonObject(): JsonObject {
         return buildJsonObject {
             put("appName", appName)
-            put("appUrl", appUrl)
+            put("appUrl", appURL)
             hideControls?.let { put("hideControls", it) }
             put("senderName", senderName)
             put("senderAddress", senderAddress)
@@ -144,7 +144,7 @@ class SettingsService internal constructor(
         return buildJsonObject {
             put("body", body)
             put("subject", subject)
-            put("actionUrl", actionUrl)
+            put("actionUrl", actionURL)
         }
     }
 
@@ -199,9 +199,9 @@ class SettingsService internal constructor(
             put("enabled", enabled)
             put("clientId", clientId)
             put("clientSecret", clientSecret)
-            authUrl?.let { put("authUrl", it) }
-            tokenUrl?.let { put("tokenUrl", it) }
-            userApiUrl?.let { put("userApiUrl", it) }
+            authURL?.let { put("authUrl", it) }
+            tokenURL?.let { put("tokenUrl", it) }
+            userApiURL?.let { put("userApiUrl", it) }
         }
     }
 }
