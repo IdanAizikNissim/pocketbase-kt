@@ -21,7 +21,7 @@ class FileService internal constructor(
         download: Boolean? = null,
         query: Map<String, Any?> = emptyMap(),
     ): String? {
-        if (fileName.isBlank() || record.id.isBlank()) {
+        if (fileName.isBlank() || record.id.isNullOrBlank()) {
             return null
         }
 

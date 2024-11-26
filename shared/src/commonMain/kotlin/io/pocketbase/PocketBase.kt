@@ -11,7 +11,7 @@ import io.pocketbase.http.ClientException
 import io.pocketbase.http.HttpClient
 import io.pocketbase.http.SSEClient
 import io.pocketbase.http.json
-import io.pocketbase.services.AdminService
+import io.pocketbase.services.BatchService
 import io.pocketbase.services.FileService
 import io.pocketbase.services.HealthService
 import io.pocketbase.services.RealtimeService
@@ -34,7 +34,6 @@ class PocketBase(
     private val client = HttpClient(authStore, config)
 
     val healthCheck = HealthService(this)
-    val admins = AdminService(this)
     val files = FileService(this)
     val settings = SettingsService(this)
     internal val realtime = RealtimeService(this, SSEClient(config, authStore))
@@ -62,6 +61,8 @@ class PocketBase(
 
         return service
     }
+
+    fun createBatch(): BatchService = BatchService(this)
 
     fun filter(
         expr: String,

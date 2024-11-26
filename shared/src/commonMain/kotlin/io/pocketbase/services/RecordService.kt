@@ -7,7 +7,7 @@ import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.pocketbase.PocketBase
 import io.pocketbase.auth.normalizeBase64
-import io.pocketbase.dtos.AuthMethodsList
+import io.pocketbase.dtos.AuthMethods
 import io.pocketbase.dtos.RecordAuth
 import io.pocketbase.dtos.RecordModel
 import io.pocketbase.dtos.RecordSubscriptionEvent
@@ -101,7 +101,7 @@ class RecordService<T : RecordModel> internal constructor(
         path = "$baseCollectionPath/auth-methods",
         query = query,
         headers = headers,
-    ).body<AuthMethodsList>()
+    ).body<AuthMethods>()
 
     suspend fun authWithPassword(
         usernameOrEmail: String,

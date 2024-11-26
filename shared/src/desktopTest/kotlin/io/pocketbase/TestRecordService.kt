@@ -30,7 +30,7 @@ class TestRecordService : TestService() {
                         ),
                 )
 
-            assertTrue(record.id.isNotBlank())
+            assertTrue(!record.id.isNullOrBlank())
             assertTrue(record.created.isNotBlank())
             assertTrue(record.updated.isNotBlank())
             assertEquals("Lorem ipsum", record.title)
@@ -42,7 +42,7 @@ class TestRecordService : TestService() {
             authWithAdmin()
             val record = getRecordByTitle("Lorem ipsum")
             assertNotNull(record)
-            val recordById = collection.getOne(record.id)
+            val recordById = collection.getOne(record.id!!)
             assertEquals(record, recordById)
         }
 
@@ -53,12 +53,13 @@ class TestRecordService : TestService() {
             val record = getRecordByTitle("Lorem ipsum")
 
             assertNotNull(record)
+            assertNotNull(record.id)
 
             val updatedRecord =
                 collection.update(
-                    id = record.id,
+                    id = record.id!!,
                     body =
-                        Demo(
+                        record.copy(
                             title = "Lorem ipsum updated",
                         ),
                 )
@@ -75,8 +76,9 @@ class TestRecordService : TestService() {
             authWithAdmin()
             val record = getRecordByTitle("Lorem ipsum updated")
             assertNotNull(record)
+            assertNotNull(record.id)
 
-            collection.delete(record.id)
+            collection.delete(record.id!!)
 
             val deletedRecord = getRecordByTitle("Lorem ipsum updated")
             assertNull(deletedRecord)
@@ -86,9 +88,9 @@ class TestRecordService : TestService() {
     fun test_4_auth_listAuthMethods() =
         runTest {
             val methods = pb.collection<User>("users").listAuthMethods()
-            assertTrue(methods.usernamePassword)
-            assertTrue(methods.emailPassword)
-            assertTrue(methods.authProviders.isEmpty())
+            assertTrue(methods.password.enabled)
+            assertEquals(listOf("email", "username"), methods.password.identityFields)
+            assertTrue(methods.oauth2.providers.isEmpty())
         }
 
     @Test
@@ -112,7 +114,7 @@ class TestRecordService : TestService() {
             assertTrue(pb.authStore.isValid)
             assertEquals(pb.authStore.token, authData.token)
 
-            pb.collection<User>("users").delete(user.id)
+            pb.collection<User>("users").delete(user.id!!)
         }
 
     @Test
@@ -140,7 +142,7 @@ class TestRecordService : TestService() {
             assertEquals(pb.authStore.token, refreshAuthData.token)
             assertEquals(authData.token, refreshAuthData.token)
 
-            pb.collection<User>("users").delete(user.id)
+            pb.collection<User>("users").delete(user.id!!)
         }
 
     private suspend fun getRecordByTitle(title: String): Demo? {
@@ -167,7 +169,7 @@ class TestRecordService : TestService() {
                     ),
             )
 
-        assertTrue(user.id.isNotBlank())
+        assertTrue(!user.id.isNullOrBlank())
 
         return user
     }
