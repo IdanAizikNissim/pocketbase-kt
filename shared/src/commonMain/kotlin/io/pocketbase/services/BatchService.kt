@@ -7,24 +7,38 @@ import io.pocketbase.dtos.BatchResult
 import io.pocketbase.dtos.File
 import io.pocketbase.dtos.RecordModel
 import io.pocketbase.http.json
-import kotlinx.serialization.Contextual
+import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.decodeFromJsonElement
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.serializer
+import kotlin.reflect.KClass
 
 class BatchService internal constructor(
     client: PocketBase,
 ) : BaseService(
         client = client,
     ) {
-    private val requests = mutableListOf<BatchRequest>()
+    private val requests = mutableListOf<BatchRequest<*>>()
     private val subs = mutableMapOf<String, SubBatchService<*>>()
 
+    inline fun <reified T : RecordModel> collection(idOrName: String): SubBatchService<T> = collection(idOrName, T::class)
+
     @Suppress("UNCHECKED_CAST")
-    fun <T : RecordModel> collection(collectionIdOrName: String): SubBatchService<T> {
+    fun <T : RecordModel> collection(
+        collectionIdOrName: String,
+        cls: KClass<T>,
+    ): SubBatchService<T> {
         val subService =
-            (subs[collectionIdOrName] as? SubBatchService<T>) ?: SubBatchService<T>(
+            (subs[collectionIdOrName] as? SubBatchService<T>) ?: SubBatchService(
                 batch = this,
                 collectionIdOrName = collectionIdOrName,
+                cls = cls,
             )
         subs[collectionIdOrName] = subService
 
@@ -35,7 +49,7 @@ class BatchService internal constructor(
         body: Map<String, Any?> = emptyMap(),
         query: Map<String, Any?> = emptyMap(),
         headers: Map<String, String> = emptyMap(),
-    ): List<BatchResult> {
+    ): List<BatchResult<*>> {
         val jsonBody = mutableListOf<RawRequest>()
         val files = mutableListOf<File>()
 
@@ -45,7 +59,7 @@ class BatchService internal constructor(
                     method = request.method.value,
                     url = request.url,
                     headers = request.headers,
-                    body = request.body,
+                    body = request.serializedBody,
                 )
 
             request.files.forEachIndexed { index, file ->
@@ -74,12 +88,34 @@ class BatchService internal constructor(
                 files = files,
             )
 
-        return json.decodeFromString(ListSerializer(BatchResult.serializer()), response.bodyAsText())
+        val jsonElement = json.parseToJsonElement(response.bodyAsText())
+        return jsonElement.jsonArray.mapNotNull { json ->
+            val jsonObject = json.jsonObject
+            if (!jsonObject.keys.contains("body")) {
+                null
+            } else {
+                BatchResult(
+                    status = jsonObject["status"]?.jsonPrimitive?.intOrNull,
+                    body =
+                        if (jsonObject["body"] is JsonNull) {
+                            null
+                        } else {
+                            val jsonObjectBody = jsonObject["body"]?.jsonObject!!
+                            val sub =
+                                subs[jsonObjectBody["collectionName"]?.jsonPrimitive?.content]
+                                    ?: subs[jsonObjectBody["collectionId"]?.jsonPrimitive?.content]
+
+                            sub?.parseResponse(jsonObjectBody)
+                        },
+                )
+            }
+        }
     }
 
     class SubBatchService<T : RecordModel> internal constructor(
         private val batch: BatchService,
         private val collectionIdOrName: String,
+        private val cls: KClass<T>,
     ) {
         fun upsert(
             body: @Serializable T? = null,
@@ -171,31 +207,44 @@ class BatchService internal constructor(
                         batch.client.buildUrl(
                             path = path("/api/collections/$collectionIdOrName/records"),
                             queryParameters = enrichedQuery,
+                            includeHost = false,
                         ),
                     headers = headers,
                     body = body,
                     files = files,
+                    cls = cls,
                 )
 
             batch.requests += request
         }
+
+        @OptIn(InternalSerializationApi::class)
+        internal fun parseResponse(jsonElement: JsonElement): T = json.decodeFromJsonElement(cls.serializer(), jsonElement)
     }
 }
 
-class BatchRequest internal constructor(
+data class BatchRequest<T : RecordModel> internal constructor(
     val method: HttpMethod,
     val url: String,
     val headers: Map<String, String> = emptyMap(),
-    val body: @Serializable Any? = null,
+    val body: @Serializable T? = null,
     val files: List<File> = emptyList(),
-)
+    val cls: KClass<T>,
+) {
+    @OptIn(InternalSerializationApi::class)
+    val serializedBody: JsonElement? by lazy {
+        if (body == null) {
+            null
+        } else {
+            json.encodeToJsonElement(cls.serializer(), body)
+        }
+    }
+}
 
 @Serializable
-private data class RawRequest(
+data class RawRequest(
     val method: String,
     val url: String,
     val headers: Map<String, String>,
-    val body:
-        @Contextual @Serializable
-        Any?,
+    val body: JsonElement?,
 )

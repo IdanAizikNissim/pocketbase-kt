@@ -128,9 +128,11 @@ class PocketBase(
     internal fun buildUrl(
         path: String,
         queryParameters: Map<String, Any?> = emptyMap(),
+        includeHost: Boolean = true,
     ): String =
         client.buildUrl(
             path = path,
             queryParameters = queryParameters,
+            includeHost = includeHost,
         )
 }

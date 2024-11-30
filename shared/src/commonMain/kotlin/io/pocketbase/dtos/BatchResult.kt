@@ -3,7 +3,7 @@ package io.pocketbase.dtos
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class BatchResult(
-    val status: Int,
-    val result: RecordModel,
+data class BatchResult<T : RecordModel>(
+    val status: Int?,
+    val body: T? = null,
 )

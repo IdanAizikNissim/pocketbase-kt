@@ -8,6 +8,7 @@ import org.junit.FixMethodOrder
 import org.junit.runners.MethodSorters
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -30,9 +31,9 @@ class TestRecordService : TestService() {
                         ),
                 )
 
-            assertTrue(!record.id.isNullOrBlank())
-            assertTrue(record.created.isNotBlank())
-            assertTrue(record.updated.isNotBlank())
+            assertFalse(record.id.isNullOrBlank())
+            assertFalse(record.created.isNullOrBlank())
+            assertFalse(record.updated.isNullOrBlank())
             assertEquals("Lorem ipsum", record.title)
         }
 

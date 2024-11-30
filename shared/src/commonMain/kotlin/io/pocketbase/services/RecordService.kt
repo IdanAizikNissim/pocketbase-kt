@@ -259,9 +259,9 @@ class RecordService<T : RecordModel> internal constructor(
             (client.authStore.model as? RecordModel)?.let { model ->
                 if (model.id == payload["id"]?.jsonPrimitive?.content &&
                     model.collectionId == payload["collectionId"]?.jsonPrimitive?.content &&
-                    !model.data.verified
+                    model.data?.verified == false
                 ) {
-                    client.authStore.save(client.authStore.token, model.apply { data = model.data.copy(verified = true) })
+                    client.authStore.save(client.authStore.token, model.apply { data = model.data?.copy(verified = true) })
                 }
             }
         }

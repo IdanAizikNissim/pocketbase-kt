@@ -14,6 +14,7 @@ import io.ktor.http.HttpMethod
 import io.ktor.http.URLProtocol
 import io.ktor.http.contentType
 import io.ktor.http.encodeURLParameter
+import io.ktor.http.fullPath
 import io.pocketbase.ClientConfig
 import io.pocketbase.auth.AuthStore
 import io.pocketbase.dtos.File
@@ -39,6 +40,7 @@ internal class HttpClient(
     fun buildUrl(
         path: String,
         queryParameters: Map<String, Any?> = emptyMap(),
+        includeHost: Boolean = true,
     ): String =
         io.ktor.http.buildUrl {
             protocol = config.protocol.urlProtocol
@@ -48,7 +50,9 @@ internal class HttpClient(
             queryParameters.forEach {
                 parameters.append(it.key, it.value.toString().encodeURLParameter())
             }
-        }.toString()
+        }.let {
+            it.toString().takeIf { includeHost } ?: it.fullPath
+        }
 
     suspend fun send(
         path: String,
