@@ -58,7 +58,7 @@ jobs:
 
       - name: Download PocketBase
         run: |
-          VERSION="0.22.22"
+          VERSION="0.23.3"
           DOWNLOAD_URL="https://github.com/pocketbase/pocketbase/releases/download/v${VERSION}/pocketbase_${VERSION}_darwin_arm64.zip"
           curl -L -o pocketbase.zip $DOWNLOAD_URL
           unzip pocketbase.zip
