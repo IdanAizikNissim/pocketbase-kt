@@ -1,6 +1,5 @@
 package io.pocketbase.auth
 
-import io.pocketbase.dtos.AdminModel
 import io.pocketbase.dtos.Model
 import io.pocketbase.dtos.RecordModel
 import io.pocketbase.http.json
@@ -78,28 +77,6 @@ abstract class AsyncAuthStore<T : @Serializable Model> internal constructor(
         const val TOKEN_KEY = "token"
         const val MODEL_KEY = "model"
     }
-}
-
-class AdminAsyncAuthStore(
-    save: SaveFunc,
-    clear: ClearFunc? = null,
-    initial: String? = null,
-) : AsyncAuthStore<AdminModel>(
-        cls = AdminModel::class,
-        save = save,
-        clear = clear,
-        initial = initial,
-    ) {
-    private val tokenModelSerializer by lazy { TokenModel.serializer(serializer) }
-
-    override fun extractModel(rawModel: JsonObject): AdminModel? =
-        if (rawModel.containsKey("id")) {
-            json.decodeFromString<AdminModel>(rawModel.toString())
-        } else {
-            null
-        }
-
-    override fun jsonEncode(token: TokenModel<AdminModel>): String = json.encodeToString(tokenModelSerializer, token)
 }
 
 class RecordAsyncAuthStore<T : RecordModel>(

@@ -10,6 +10,6 @@ data class HealthCheck(
 ) {
     @Serializable
     data class Data(
-        val canBackup: Boolean,
+        val canBackup: Boolean? = null,
     )
 }

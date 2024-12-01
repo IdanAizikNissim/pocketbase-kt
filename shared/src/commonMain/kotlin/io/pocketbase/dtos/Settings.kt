@@ -16,7 +16,7 @@ data class Settings(
 @Serializable
 data class Meta(
     val appName: String,
-    val appUrl: String,
+    val appURL: String,
     val hideControls: Boolean? = null,
     val senderName: String,
     val senderAddress: String,
@@ -29,7 +29,7 @@ data class Meta(
 data class EmailTemplate(
     val body: String,
     val subject: String,
-    val actionUrl: String,
+    val actionURL: String,
     val hidden: Boolean,
 )
 
@@ -57,7 +57,7 @@ data class S3(
     val region: String,
     val endpoint: String,
     val accessKey: String,
-    val secret: String,
+    val secret: String? = null,
     val forcePathStyle: Boolean? = null,
 )
 
@@ -79,7 +79,7 @@ data class AuthProvider(
     val enabled: Boolean,
     val clientId: String,
     val clientSecret: String,
-    val authUrl: String?,
-    val tokenUrl: String?,
-    val userApiUrl: String?,
+    val authURL: String?,
+    val tokenURL: String?,
+    val userApiURL: String?,
 )

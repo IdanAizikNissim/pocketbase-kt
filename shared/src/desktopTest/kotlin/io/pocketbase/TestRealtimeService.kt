@@ -76,7 +76,7 @@ class TestRealtimeService : TestService() {
 
             val record =
                 collection.update(
-                    id = recordByTitle.id,
+                    id = recordByTitle.id!!,
                     body = Demo(title = "Filter subscription updated"),
                 )
 
@@ -108,13 +108,13 @@ class TestRealtimeService : TestService() {
             val deferred = CompletableDeferred<RecordSubscriptionEvent<Demo>>()
             val unsubscribe =
                 collection.subscribe(
-                    topic = recordByTitle.id,
+                    topic = recordByTitle.id!!,
                     callback = { event ->
                         deferred.complete(event)
                     },
                 )
 
-            collection.delete(recordByTitle.id)
+            collection.delete(recordByTitle.id!!)
 
             val result = deferred.await()
             assertEquals(RecordSubscriptionEvent.Action.DELETE, result.action)

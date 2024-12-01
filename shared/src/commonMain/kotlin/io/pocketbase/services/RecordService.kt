@@ -7,7 +7,7 @@ import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.pocketbase.PocketBase
 import io.pocketbase.auth.normalizeBase64
-import io.pocketbase.dtos.AuthMethodsList
+import io.pocketbase.dtos.AuthMethods
 import io.pocketbase.dtos.RecordAuth
 import io.pocketbase.dtos.RecordModel
 import io.pocketbase.dtos.RecordSubscriptionEvent
@@ -101,7 +101,7 @@ class RecordService<T : RecordModel> internal constructor(
         path = "$baseCollectionPath/auth-methods",
         query = query,
         headers = headers,
-    ).body<AuthMethodsList>()
+    ).body<AuthMethods>()
 
     suspend fun authWithPassword(
         usernameOrEmail: String,
@@ -259,12 +259,96 @@ class RecordService<T : RecordModel> internal constructor(
             (client.authStore.model as? RecordModel)?.let { model ->
                 if (model.id == payload["id"]?.jsonPrimitive?.content &&
                     model.collectionId == payload["collectionId"]?.jsonPrimitive?.content &&
-                    !model.data.verified
+                    model.data?.verified == false
                 ) {
-                    client.authStore.save(client.authStore.token, model.apply { data = model.data.copy(verified = true) })
+                    client.authStore.save(client.authStore.token, model.apply { data = model.data?.copy(verified = true) })
                 }
             }
         }
+    }
+
+    suspend fun requestOTP(
+        email: String,
+        body: Map<String, Any?> = emptyMap(),
+        query: Map<String, Any?> = emptyMap(),
+        headers: Map<String, String> = emptyMap(),
+    ): String {
+        val enrichedBody =
+            body +
+                mapOf(
+                    "email" to email,
+                )
+
+        return client.send(
+            path = "$baseCollectionPath/request-otp",
+            method = HttpMethod.Post,
+            body = enrichedBody,
+            query = query,
+            headers = headers,
+        ).body<JsonObject>().getValue("otpId").jsonPrimitive.content
+    }
+
+    suspend fun authWithOTP(
+        otpId: String,
+        password: String,
+        expand: String? = null,
+        fields: String? = null,
+        body: Map<String, Any?> = emptyMap(),
+        query: Map<String, Any?> = emptyMap(),
+        headers: Map<String, String> = emptyMap(),
+    ): RecordAuth<T> {
+        val enrichedBody =
+            body +
+                mapOf(
+                    "otpId" to otpId,
+                    "password" to password,
+                )
+
+        val enrichedQuery =
+            query +
+                mapOfNotNull(
+                    "expand" to expand,
+                    "fields" to fields,
+                )
+
+        return client.send(
+            path = "$baseCollectionPath/auth-with-otp",
+            method = HttpMethod.Post,
+            body = enrichedBody,
+            query = enrichedQuery,
+            headers = headers,
+        ).authResponse()
+    }
+
+    suspend fun impersonate(
+        id: String,
+        duration: Int? = null,
+        expand: String? = null,
+        fields: String? = null,
+        body: Map<String, Any?> = emptyMap(),
+        query: Map<String, Any?> = emptyMap(),
+        headers: Map<String, String> = emptyMap(),
+    ): RecordAuth<T> {
+        val enrichedBody =
+            body +
+                buildMap {
+                    duration?.let { put("duration", it) }
+                }
+
+        val enrichedQuery =
+            query +
+                mapOfNotNull(
+                    "expand" to expand,
+                    "fields" to fields,
+                )
+
+        return client.send(
+            path = "$baseCollectionPath/impersonate/$id",
+            method = HttpMethod.Post,
+            body = enrichedBody,
+            query = enrichedQuery,
+            headers = headers,
+        ).authResponse()
     }
 
     private fun onAuthModelChanged(

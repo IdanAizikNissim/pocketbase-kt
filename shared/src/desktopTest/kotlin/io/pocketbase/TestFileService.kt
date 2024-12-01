@@ -39,7 +39,7 @@ class TestFileService : TestService() {
 
             assertEquals("${config.host}/api/files/${record.collectionId}/${record.id}/${record.file}?token=$token", url)
 
-            collection.delete(record.id)
+            collection.delete(record.id!!)
         }
 
     private suspend fun generateToken(): String {

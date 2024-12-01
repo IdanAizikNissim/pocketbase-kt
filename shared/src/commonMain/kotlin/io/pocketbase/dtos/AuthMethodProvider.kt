@@ -10,5 +10,5 @@ data class AuthMethodProvider(
     val codeVerifier: String = "",
     val codeChallenge: String = "",
     val codeChallengeMethod: String = "",
-    val authUrl: String = "",
+    val authURL: String = "",
 )
