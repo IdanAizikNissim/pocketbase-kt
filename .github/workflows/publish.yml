@@ -52,10 +52,6 @@ jobs:
           "admin_password": "${{ secrets.PB_ADMIN_PASSWORD }}"
           }' > shared/src/desktopTest/resources/config.json
 
-      - name: Unzip PocketBase Data
-        run: |
-          unzip pb.zip
-
       - name: Download PocketBase
         run: |
           VERSION="0.23.6"
@@ -64,9 +60,13 @@ jobs:
           unzip pocketbase.zip
           chmod +x pocketbase
 
+      - name: Unzip PocketBase Data
+        run: |
+          unzip pb.zip
+
       - name: Run PocketBase
         run: |
-          ./pocketbase serve --dir ./pb/pb/pb_data --migrationsDir ./pb/pb/pb_migrations &
+          ./pocketbase serve
 
       - name: Verify PocketBase is Running
         run: |
