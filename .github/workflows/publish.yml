@@ -10,7 +10,7 @@ jobs:
     permissions:
       contents: write
       packages: write
-    uses: touchlab/KMMBridgeGithubWorkflow/.github/workflows/faktorybuildautoversion.yml@v1.1
+    uses: touchlab/KMMBridgeGithubWorkflow/.github/workflows/faktorybuildautoversion.yml@v1.2
     with:
       jvmVersion: 17
       versionBaseProperty: "LIBRARY_VERSION"
@@ -52,21 +52,21 @@ jobs:
           "admin_password": "${{ secrets.PB_ADMIN_PASSWORD }}"
           }' > shared/src/desktopTest/resources/config.json
 
-      - name: Unzip PocketBase Data
-        run: |
-          unzip pb.zip -d ./pb
-
       - name: Download PocketBase
         run: |
-          VERSION="0.22.22"
+          VERSION="0.23.6"
           DOWNLOAD_URL="https://github.com/pocketbase/pocketbase/releases/download/v${VERSION}/pocketbase_${VERSION}_darwin_arm64.zip"
           curl -L -o pocketbase.zip $DOWNLOAD_URL
           unzip pocketbase.zip
           chmod +x pocketbase
 
+      - name: Unzip PocketBase Data
+        run: |
+          unzip pb.zip
+
       - name: Run PocketBase
         run: |
-          ./pocketbase serve --dir ./pb/pb/pb_data --migrationsDir ./pb/pb/pb_migrations &
+          ./pocketbase serve &
 
       - name: Verify PocketBase is Running
         run: |
