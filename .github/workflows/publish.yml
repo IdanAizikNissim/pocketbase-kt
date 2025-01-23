@@ -80,4 +80,3 @@ jobs:
     uses: ./.github/workflows/kmm-publish.yml
     with:
       build-debug: false
-      publish-tasks: "publishAllPublicationsToGitHubPackagesRepository kmmBridgePublish"
