@@ -80,4 +80,4 @@ jobs:
     uses: ./.github/workflows/kmm-publish.yml
     with:
       build-debug: false
-      publish-tasks: "publishKotlinMultiplatformPublicationToGitHubPackagesRepository publishAndroidDebugPublicationToGitHubPackagesRepository publishAndroidReleasePublicationToGitHubPackagesRepository publishIosArm64PublicationToGitHubPackagesRepository publishIosSimulatorArm64PublicationToGitHubPackagesRepository publishIosX64PublicationToGitHubPackagesRepository publishDesktopPublicationToGitHubPackagesRepository kmmBridgePublish publish"
+      publish-tasks: "publishAllPublicationsToGitHubPackagesRepository kmmBridgePublish"
