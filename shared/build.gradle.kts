@@ -78,6 +78,8 @@ kotlin {
     }
 }
 
+addGithubPackagesRepository()
+
 android {
     namespace = "io.pocketbase"
     compileSdk = 34
