@@ -12,7 +12,7 @@ jobs:
       build-debug: false
 
   publish:
-    needs: kmmbridge
+    needs: kmm-publish
     permissions:
       contents: write
       packages: write
