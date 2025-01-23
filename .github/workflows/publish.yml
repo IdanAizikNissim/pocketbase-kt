@@ -5,6 +5,10 @@ on:
     branches:
       - 'release-*'
 
+permissions:
+  contents: write
+  packages: write
+
 jobs:
   kmm-publish:
     uses: ./.github/workflows/kmm-publish.yml
