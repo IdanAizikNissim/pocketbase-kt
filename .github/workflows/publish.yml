@@ -10,13 +10,7 @@ permissions:
   packages: write
 
 jobs:
-  kmm-publish:
-    uses: ./.github/workflows/kmm-publish.yml
-    with:
-      build-debug: false
-
-  publish:
-    needs: kmm-publish
+  sanity:
     permissions:
       contents: write
       packages: write
@@ -73,17 +67,17 @@ jobs:
           sleep 5
           curl http://localhost:8090/api/health
 
-      - name: Gradle
-        uses: gradle/gradle-build-action@v2
-        with:
-          gradle-version: 8.7
-          arguments: build -PtagName=${{ env.TAG_NAME }}
-        env:
-          TAG_NAME: ${{ steps.process_tag.outputs.TAG_NAME }}
+      - name: Format Verify
+        run: |
+          ./gradlew :shared:ktlintKotlinScriptFormat
 
-      - name: Publish
-        run: gradle check publish -PgprBuild=true -PtagName=${{ env.TAG_NAME }} --no-configure-on-demand --no-daemon
-        env:
-          ORG_GRADLE_PROJECT_githubUsername: ${{ github.actor }}
-          ORG_GRADLE_PROJECT_githubPassword: ${{ secrets.GITHUB_TOKEN }}
-          TAG_NAME: ${{ steps.process_tag.outputs.TAG_NAME }}
+      - name: Tests
+        run: |
+          ./gradlew :shared:desktopTest
+
+  publish:
+    needs: sanity
+    uses: ./.github/workflows/kmm-publish.yml
+    with:
+      build-debug: false
+      publish-tasks: "publishKotlinMultiplatformPublicationToGitHubPackagesRepository publishAndroidDebugPublicationToGitHubPackagesRepository publishAndroidReleasePublicationToGitHubPackagesRepository publishIosArm64PublicationToGitHubPackagesRepository publishIosSimulatorArm64PublicationToGitHubPackagesRepository publishIosX64PublicationToGitHubPackagesRepository kmmBridgePublish"
