@@ -49,7 +49,7 @@ jobs:
       - name: Kill Pocketbase Process
         run: |
           pkill -f pocketbase || true
-          rm pocketbase
+          rm -rf pocketbase
 
       - name: Download PocketBase
         run: |
