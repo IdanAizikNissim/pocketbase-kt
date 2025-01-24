@@ -74,11 +74,11 @@ jobs:
 
       - name: Format Verify
         run: |
-          ./gradlew :pocketbase:ktlintKotlinScriptFormat
+          ./gradlew pocketbase:ktlintKotlinScriptFormat
 
       - name: Tests
         run: |
-          ./gradlew :pocketbase:desktopTest
+          ./gradlew pocketbase:desktopTest
 
   publish:
     needs: sanity
