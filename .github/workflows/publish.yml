@@ -46,9 +46,10 @@ jobs:
           "admin_password": "${{ secrets.PB_ADMIN_PASSWORD }}"
           }' > pocketbase/src/desktopTest/resources/config.json
 
-      - name: Kill Pocketbase if running
+      - name: Kill Pocketbase Process
         run: |
-          pkill -f pocketbase
+          pkill -f pocketbase || true
+          rm pocketbase
 
       - name: Download PocketBase
         run: |
