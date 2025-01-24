@@ -44,7 +44,7 @@ jobs:
           "host": "${{ secrets.PB_URL }}",
           "admin_email": "${{ secrets.PB_ADMIN_EMAIL }}",
           "admin_password": "${{ secrets.PB_ADMIN_PASSWORD }}"
-          }' > shared/src/desktopTest/resources/config.json
+          }' > pocketbase/src/desktopTest/resources/config.json
 
       - name: Download PocketBase
         run: |
@@ -69,11 +69,11 @@ jobs:
 
       - name: Format Verify
         run: |
-          ./gradlew :shared:ktlintKotlinScriptFormat
+          ./gradlew :pocketbase:ktlintKotlinScriptFormat
 
       - name: Tests
         run: |
-          ./gradlew :shared:desktopTest
+          ./gradlew :pocketbase:desktopTest
 
   publish:
     needs: sanity
