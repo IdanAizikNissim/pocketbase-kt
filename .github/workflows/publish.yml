@@ -22,14 +22,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Process Tag
-        id: process_tag
-        run: |
-          BRANCH_NAME=${GITHUB_REF#refs/heads/}
-          TAG_NAME=${BRANCH_NAME#release-}
-          echo "Version pushed: $TAG_NAME"
-          echo "TAG_NAME=$TAG_NAME" >> $GITHUB_OUTPUT
-
       - name: Setup Java
         uses: actions/setup-java@v1
         with:
@@ -73,9 +65,14 @@ jobs:
           sleep 5
           curl http://localhost:8090/api/health
 
-#      - name: Format Verify
-#        run: |
-#          ./gradlew :pocketbase:ktlintKotlinScriptCheck
+      - name: Gradle
+        uses: gradle/gradle-build-action@v2
+        with:
+          gradle-version: 8.7
+
+      - name: Format Verify
+        run: |
+          ./gradlew :pocketbase:ktlintKotlinScriptCheck
 
       - name: Tests
         run: |
