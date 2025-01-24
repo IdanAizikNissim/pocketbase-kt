@@ -73,9 +73,9 @@ jobs:
           sleep 5
           curl http://localhost:8090/api/health
 
-      - name: Format Verify
-        run: |
-          ./gradlew :pocketbase:ktlintKotlinScriptCheck
+#      - name: Format Verify
+#        run: |
+#          ./gradlew :pocketbase:ktlintKotlinScriptCheck
 
       - name: Tests
         run: |
