@@ -5,7 +5,7 @@ ktor = "3.0.3"
 serialization = "1.7.3"
 dateTime = "0.6.1"
 coroutines = "1.9.0"
-ktlint = "12.1.1"
+ktlint = "12.1.2"
 kmmBridge = "1.2.0"
 skie = "0.10.0"
 
