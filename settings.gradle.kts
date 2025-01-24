@@ -15,4 +15,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "pocketbase-kt"
-include(":shared")
+include(":pocketbase")

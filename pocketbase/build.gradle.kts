@@ -1,5 +1,3 @@
-import java.lang.System.getenv
-
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
@@ -80,6 +78,8 @@ kotlin {
     }
 }
 
+addGithubPackagesRepository()
+
 android {
     namespace = "io.pocketbase"
     compileSdk = 34
@@ -92,56 +92,15 @@ android {
     }
 }
 
-group = project.property("GROUP") as String
-version =
-    when {
-        getenv("TAG_NAME")?.isNotBlank() == true -> getenv("TAG_NAME") as String
-        project.hasProperty("tagName") -> project.property("tagName") as String
-        else -> project.property("LIBRARY_VERSION") as String
-    }
-
-if (project.hasProperty("gprBuild")) {
-    publishing {
-        publications {
-            create<MavenPublication>("maven") {
-                groupId = project.property("GROUP") as String
-                artifactId = "pocketbase"
-                version = version
-                from(components["kotlin"])
-            }
-        }
-
-        repositories {
-            maven {
-                name = "github"
-                url = uri("https://maven.pkg.github.com/${getenv("GITHUB_REPOSITORY")}")
-                credentials(PasswordCredentials::class)
-            }
-        }
-    }
-} else {
-    val autoVersion =
-        project.property(
-            if (project.hasProperty("AUTO_VERSION")) {
-                "AUTO_VERSION"
-            } else {
-                "LIBRARY_VERSION"
-            },
-        ) as String
-
-    version = autoVersion
-
-    addGithubPackagesRepository()
-
-    kmmbridge {
-        frameworkName.set("PocketBase")
-        mavenPublishArtifacts()
-        spm()
+kmmbridge {
+    gitHubReleaseArtifacts()
+    spm(swiftToolVersion = "5.8") {
+        iOS { v("15") }
     }
 }
 
-publishing {
-    repositories {
-        mavenLocal()
+skie {
+    build {
+        produceDistributableFramework()
     }
 }

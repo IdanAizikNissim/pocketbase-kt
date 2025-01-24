@@ -5,14 +5,12 @@ on:
     branches:
       - 'release-*'
 
-jobs:
-  kmm-publish:
-    uses: ./.github/workflows/kmm-publish.yml
-    with:
-      build-debug: false
+permissions:
+  contents: write
+  packages: write
 
-  publish:
-    needs: kmm-publish
+jobs:
+  sanity:
     permissions:
       contents: write
       packages: write
@@ -46,14 +44,19 @@ jobs:
           "host": "${{ secrets.PB_URL }}",
           "admin_email": "${{ secrets.PB_ADMIN_EMAIL }}",
           "admin_password": "${{ secrets.PB_ADMIN_PASSWORD }}"
-          }' > shared/src/desktopTest/resources/config.json
+          }' > pocketbase/src/desktopTest/resources/config.json
+
+      - name: Kill Pocketbase Process
+        run: |
+          pkill -f pocketbase || true
+          rm -rf pocketbase
 
       - name: Download PocketBase
         run: |
-          VERSION="0.23.6"
+          VERSION="0.23.12"
           DOWNLOAD_URL="https://github.com/pocketbase/pocketbase/releases/download/v${VERSION}/pocketbase_${VERSION}_darwin_arm64.zip"
           curl -L -o pocketbase.zip $DOWNLOAD_URL
-          unzip pocketbase.zip
+          unzip -o pocketbase.zip
           chmod +x pocketbase
 
       - name: Unzip PocketBase Data
@@ -69,17 +72,17 @@ jobs:
           sleep 5
           curl http://localhost:8090/api/health
 
-      - name: Gradle
-        uses: gradle/gradle-build-action@v2
-        with:
-          gradle-version: 8.7
-          arguments: build -PtagName=${{ env.TAG_NAME }}
-        env:
-          TAG_NAME: ${{ steps.process_tag.outputs.TAG_NAME }}
+      - name: Format Verify
+        run: |
+          ./gradlew :pocketbase:ktlintKotlinScriptCheck
 
-      - name: Publish
-        run: gradle check publish -PgprBuild=true -PtagName=${{ env.TAG_NAME }} --no-configure-on-demand --no-daemon
-        env:
-          ORG_GRADLE_PROJECT_githubUsername: ${{ github.actor }}
-          ORG_GRADLE_PROJECT_githubPassword: ${{ secrets.GITHUB_TOKEN }}
-          TAG_NAME: ${{ steps.process_tag.outputs.TAG_NAME }}
+      - name: Tests
+        run: |
+          ./gradlew :pocketbase:desktopTest
+
+  publish:
+    needs: sanity
+    uses: ./.github/workflows/kmm-publish.yml
+    with:
+      build-debug: false
+      publish-tasks: "publishKotlinMultiplatformPublicationToGitHubPackagesRepository publishAndroidDebugPublicationToGitHubPackagesRepository publishAndroidReleasePublicationToGitHubPackagesRepository publishIosX64PublicationToGitHubPackagesRepository publishIosArm64PublicationToGitHubPackagesRepository publishIosSimulatorArm64PublicationToGitHubPackagesRepository kmmBridgePublish"
