@@ -1,13 +1,13 @@
 [versions]
 agp = "8.3.2"
-kotlin = "2.0.21"
-ktor = "3.0.3"
+kotlin = "2.2.0"
+ktor = "3.2.2"
 serialization = "1.7.3"
 dateTime = "0.6.1"
 coroutines = "1.9.0"
 ktlint = "12.1.2"
-kmmBridge = "1.2.0"
-skie = "0.10.0"
+kmmBridge = "1.2.1"
+skie = "0.10.4"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }

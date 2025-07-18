@@ -64,11 +64,10 @@ kotlin {
 
     targets.all {
         compilations.all {
-            kotlinOptions {
-                freeCompilerArgs =
-                    listOf(
-                        "-Xexpect-actual-classes",
-                    )
+            compileTaskProvider.configure {
+                compilerOptions {
+                    freeCompilerArgs.add("-Xexpect-actual-classes")
+                }
             }
         }
     }
