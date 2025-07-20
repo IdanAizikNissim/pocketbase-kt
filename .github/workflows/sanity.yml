@@ -65,12 +65,6 @@ jobs:
         with:
           gradle-version: 8.7
 
-      - name: List available Gradle tasks
-        run: ./gradlew tasks --all
-
-      - name: List Pocketbase project tasks
-        run: ./gradlew pocketbase:tasks
-
       - name: Format Verify
         run: |
           ./gradlew :pocketbase:ktlintKotlinScriptCheck
