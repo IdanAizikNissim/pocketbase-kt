@@ -1,0 +1,75 @@
+name: Sanity
+
+on:
+  pull_request:
+    branches: ["*"]
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  sanity:
+    runs-on: macos-14
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: 17
+
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: 15.4
+
+      - name: Generate config.json
+        run: |
+          echo '{
+          "host": "${{ secrets.PB_URL }}",
+          "admin_email": "${{ secrets.PB_ADMIN_EMAIL }}",
+          "admin_password": "${{ secrets.PB_ADMIN_PASSWORD }}"
+          }' > pocketbase/src/desktopTest/resources/config.json
+
+      - name: Kill Pocketbase Process
+        run: |
+          pkill -f tools/pocketbase || true
+          rm -rf tools/pocketbase
+
+      - name: Download PocketBase
+        run: |
+          mkdir -p tools
+          VERSION="0.23.12"
+          DOWNLOAD_URL="https://github.com/pocketbase/pocketbase/releases/download/v${VERSION}/pocketbase_${VERSION}_darwin_arm64.zip"
+          curl -Lo tools/pocketbase.zip $DOWNLOAD_URL
+          unzip -o tools/pocketbase.zip -d tools/
+          chmod +x tools/pocketbase
+
+      - name: Unzip PocketBase Data
+        run: unzip -o pb.zip -d tools/
+
+      - name: Run PocketBase
+        run: tools/pocketbase serve &
+
+      - name: Verify PocketBase is Running
+        run: |
+          sleep 5
+          curl http://localhost:8090/api/health
+
+      - name: Gradle
+        uses: gradle/gradle-build-action@v2
+        with:
+          gradle-version: 8.7
+
+      - name: Format Verify
+        run: |
+          ./gradlew :pocketbase:ktlintKotlinScriptCheck
+
+      - name: Tests
+        run: |
+          ./gradlew :pocketbase:desktopTest
+
