@@ -37,24 +37,23 @@ jobs:
 
       - name: Kill Pocketbase Process
         run: |
-          pkill -f pocketbase || true
-          rm -rf pocketbase
+          pkill -f tools/pocketbase || true
+          rm -rf tools/pocketbase
 
       - name: Download PocketBase
         run: |
+          mkdir -p tools
           VERSION="0.23.12"
           DOWNLOAD_URL="https://github.com/pocketbase/pocketbase/releases/download/v${VERSION}/pocketbase_${VERSION}_darwin_arm64.zip"
-          curl -L -o pocketbase.zip $DOWNLOAD_URL
-          unzip -o pocketbase.zip
-          chmod +x pocketbase
+          curl -Lo tools/pocketbase.zip $DOWNLOAD_URL
+          unzip -o tools/pocketbase.zip -d tools/
+          chmod +x tools/pocketbase
 
       - name: Unzip PocketBase Data
-        run: |
-          unzip pb.zip
+        run: unzip -o pb.zip -d tools/
 
       - name: Run PocketBase
-        run: |
-          ./pocketbase serve &
+        run: tools/pocketbase serve &
 
       - name: Verify PocketBase is Running
         run: |
