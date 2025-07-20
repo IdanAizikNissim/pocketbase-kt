@@ -3,9 +3,8 @@ plugins {
     alias(libs.plugins.androidLibrary)
     alias(libs.plugins.serialization)
     alias(libs.plugins.ktlint)
-    alias(libs.plugins.kmmbridge)
     alias(libs.plugins.skie)
-    `maven-publish`
+    alias(libs.plugins.mavenPublish)
 }
 
 kotlin {
@@ -77,8 +76,6 @@ kotlin {
     }
 }
 
-addGithubPackagesRepository()
-
 android {
     namespace = "io.pocketbase"
     compileSdk = 34
@@ -91,15 +88,18 @@ android {
     }
 }
 
-kmmbridge {
-    gitHubReleaseArtifacts()
-    spm(swiftToolVersion = "5.8") {
-        iOS { v("15") }
-    }
-}
-
 skie {
     build {
         produceDistributableFramework()
+    }
+}
+
+publishing {
+    repositories {
+        maven {
+            name = "githubPackages"
+            url = uri("https://maven.pkg.github.com/IdanAizikNissim/pocketbase-kt")
+            credentials(PasswordCredentials::class)
+        }
     }
 }
