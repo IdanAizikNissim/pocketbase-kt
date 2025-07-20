@@ -74,7 +74,7 @@ jobs:
 
       - name: Format Verify
         run: |
-          ./gradlew :pocketbase:ktlintKotlinScriptFormat
+          ./gradlew :pocketbase:ktlintKotlinScriptCheck
 
       - name: Tests
         run: |
