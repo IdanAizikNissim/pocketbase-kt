@@ -25,6 +25,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonObject
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.reflect.KClass
+import kotlin.time.ExperimentalTime
 
 class PocketBase(
     config: ClientConfig,
@@ -64,6 +65,7 @@ class PocketBase(
 
     fun createBatch(): BatchService = BatchService(this)
 
+    @OptIn(ExperimentalTime::class)
     fun filter(
         expr: String,
         query: Map<String, Any?> = emptyMap(),

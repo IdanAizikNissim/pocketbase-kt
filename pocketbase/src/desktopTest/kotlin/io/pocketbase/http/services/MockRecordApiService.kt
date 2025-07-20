@@ -11,9 +11,9 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import io.ktor.utils.io.ByteReadChannel
 import io.pocketbase.http.fromRequest
-import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.number
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
@@ -21,10 +21,11 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlin.time.ExperimentalTime
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-@OptIn(ExperimentalUuidApi::class)
+@OptIn(ExperimentalUuidApi::class, ExperimentalTime::class)
 internal class MockRecordApiService(
     private val json: Json,
 ) : MockApiService {
@@ -123,7 +124,7 @@ internal class MockRecordApiService(
     ): HttpResponseData {
         val record = json.fromRequest(request)
         val uuid = Uuid.random().toString()
-        val created = Clock.System.now().toLocalDateTime(TimeZone.UTC).format()
+        val created = kotlin.time.Clock.System.now().toLocalDateTime(TimeZone.UTC).format()
         records[uuid] =
             record.jsonObject.toMutableMap().apply {
                 put("created", JsonPrimitive(created))
@@ -162,7 +163,7 @@ internal class MockRecordApiService(
                         uuid = id,
                         title = updatedRecord.title ?: "",
                         created = records[id]?.created ?: "",
-                        updated = Clock.System.now().toLocalDateTime(TimeZone.UTC).format(),
+                        updated = kotlin.time.Clock.System.now().toLocalDateTime(TimeZone.UTC).format(),
                     ),
                 ),
             status = HttpStatusCode.OK,
@@ -213,9 +214,9 @@ internal class MockRecordApiService(
         return buildString {
             append(year.toString().padStart(4, '0'))
             append('-')
-            append(monthNumber.toString().padStart(2, '0'))
+            append(month.number.toString().padStart(2, '0'))
             append('-')
-            append(dayOfMonth.toString().padStart(2, '0'))
+            append(day.toString().padStart(2, '0'))
             append(' ')
             append(hour.toString().padStart(2, '0'))
             append(':')

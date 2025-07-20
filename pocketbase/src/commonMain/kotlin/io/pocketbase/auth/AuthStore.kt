@@ -5,12 +5,12 @@ import io.pocketbase.http.json
 import io.pocketbase.utils.safeDecode
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.datetime.Clock
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonPrimitive
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
+import kotlin.time.ExperimentalTime
 
 open class AuthStore {
     var model: Model? = null
@@ -24,7 +24,7 @@ open class AuthStore {
         )
     val onChange = eventChannel.receiveAsFlow()
 
-    @OptIn(ExperimentalEncodingApi::class)
+    @OptIn(ExperimentalEncodingApi::class, ExperimentalTime::class)
     val isValid: Boolean
         get() {
             val parts = token.split(".")
@@ -36,7 +36,7 @@ open class AuthStore {
             val json = json.decodeFromString<JsonObject>(Base64.safeDecode(tokenPart).decodeToString())
             val exp = json["exp"]?.jsonPrimitive?.intOrNull ?: (json["exp"]?.toString()?.toIntOrNull() ?: 0)
 
-            return exp > Clock.System.now().epochSeconds
+            return exp > kotlin.time.Clock.System.now().epochSeconds
         }
 
     internal open fun save(
