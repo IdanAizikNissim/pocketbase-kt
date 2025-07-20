@@ -17,8 +17,10 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+      - name: Gradle
+        uses: gradle/gradle-build-action@v2
+        with:
+          gradle-version: 8.13
 
       - name: Add Gradle Properties
         env:
