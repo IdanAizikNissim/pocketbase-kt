@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.serialization).apply(false)
     alias(libs.plugins.kmmbridge).apply(false)
     alias(libs.plugins.skie).apply(false)
+    alias(libs.plugins.ktlint)
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
@@ -18,6 +19,14 @@ subprojects {
 
     group = GROUP
     version = LIBRARY_VERSION
+
+    apply(plugin = "org.jlleitschuh.gradle.ktlint")
+
+    ktlint {
+        filter {
+            include("**/*.kts")
+        }
+    }
 }
 
 tasks.register<Delete>("clean") {
