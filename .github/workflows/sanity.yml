@@ -66,9 +66,12 @@ jobs:
         with:
           gradle-version: 8.7
 
+      - name: List available Gradle tasks
+        run: ./gradlew tasks --all
+
       - name: Format Verify
         run: |
-          ./gradlew :pocketbase:ktlintKotlinScriptCheck
+          ./gradlew :pocketbase:ktlintKotlinScriptFormat
 
       - name: Tests
         run: |
