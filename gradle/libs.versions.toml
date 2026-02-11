@@ -8,6 +8,9 @@ coroutines = "1.10.2"
 ktlint = "12.1.2"
 skie = "0.10.4"
 mavenPublish = "0.34.0"
+compose-plugin = "1.7.0"
+androidx-activityCompose = "1.9.3"
+filekit = "0.8.8"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -23,11 +26,17 @@ ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx
 ktor-client-logging = { module = "io.ktor:ktor-client-logging", version.ref = "ktor" }
 ktor-client-test = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "dateTime" }
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }
+filekit-compose = { module = "io.github.vinceglb:filekit-compose", version.ref = "filekit" }
+filekit-core = { module = "io.github.vinceglb:filekit-core", version.ref = "filekit" }
 
 [plugins]
 androidLibrary = { id = "com.android.library", version.ref = "agp" }
+androidApplication = { id = "com.android.application", version.ref = "agp" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
 skie = { id = "co.touchlab.skie", version.ref = "skie" }
 mavenPublish = { id = "com.vanniktech.maven.publish", version.ref = "mavenPublish" }
+jetbrainsCompose = { id = "org.jetbrains.compose", version.ref = "compose-plugin" }
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }

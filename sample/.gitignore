@@ -1,0 +1,6 @@
+/backend/pocketbase
+/backend/*.zip
+/backend/pb_data/
+/backend/*.log
+/backend/pb_migrations/*.js
+!/backend/pb_migrations/1710000000_collections.js

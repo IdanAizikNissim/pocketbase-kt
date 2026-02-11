@@ -16,3 +16,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "pocketbase-kt"
 include(":pocketbase")
+include(":sample")

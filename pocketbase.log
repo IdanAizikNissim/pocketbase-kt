@@ -1,0 +1,14 @@
+Downloading PocketBase 0.22.6...
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+  3 15.0M    3  527k    0     0  1218k      0  0:00:12 --:--:--  0:00:12 1218k100 15.0M  100 15.0M    0     0  23.7M      0 --:--:-- --:--:-- --:--:-- 72.3M
+Unzipping...
+Archive:  pocketbase_0.22.6_linux_amd64.zip
+  inflating: CHANGELOG.md
+  inflating: LICENSE.md
+  inflating: pocketbase
+Starting PocketBase at http://127.0.0.1:8090
+2026/02/11 14:13:31 Server started at http://127.0.0.1:8090
+├─ REST API: http://127.0.0.1:8090/api/
+└─ Admin UI: http://127.0.0.1:8090/_/
