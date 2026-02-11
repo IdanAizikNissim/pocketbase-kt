@@ -68,42 +68,63 @@ class TodoViewModel(private val scope: CoroutineScope) {
     }
 
     fun createTodo(text: String, file: PlatformFile? = null) {
+        println("DEBUG: createTodo called with text='$text', file=${file?.name}")
         scope.launch(Dispatchers.IO) {
             try {
-                val userId = (client.authStore.model as? RecordModel)?.id ?: return@launch
+                val userId = (client.authStore.model as? RecordModel)?.id ?: run {
+                    println("DEBUG: userId is null, aborting")
+                    return@launch
+                }
+                println("DEBUG: userId=$userId")
 
-                val todo = TodoCreate(
+                val todo = Todo(
                     text = text,
                     completed = false,
                     user = userId
                 )
+                println("DEBUG: TodoCreate object created")
 
                 val files = if (file != null) {
+                    println("DEBUG: reading bytes for file: ${file.name}")
                     val bytes = file.readBytes()
+                    println("DEBUG: file bytes read, size=${bytes.size}")
                     listOf(PBFile(
                         field = "attachment",
                         fileName = file.name,
                         data = bytes
                     ))
-                } else emptyList()
-
-                client.collection("todos", TodoCreate::class).create(todo, files = files)
+                } else {
+                    println("DEBUG: no file to attach")
+                    emptyList()
+                }
+                println("DEBUG: calling client.collection().create()")
+                client.collection("todos", Todo::class).create(todo, files = files)
+                println("DEBUG: createTodo completed successfully")
 
             } catch (e: Exception) {
+                println("DEBUG: exception in createTodo: ${e.message}")
                 e.printStackTrace()
             }
         }
     }
 
-    fun updateTodo(id: String, text: String, completed: Boolean, file: PlatformFile? = null, deleteAttachment: Boolean = false) {
+    fun updateTodo(
+        id: String,
+        user: String,
+        text: String,
+        completed: Boolean,
+        file: PlatformFile? = null,
+        deleteAttachment: Boolean = false
+    ) {
         scope.launch(Dispatchers.IO) {
             try {
                 val attachmentVal = if (deleteAttachment) "" else null
 
-                val updateObj = TodoUpdate(
+                val updateObj = Todo(
                     text = text,
                     completed = completed,
-                    attachment = attachmentVal
+                    attachment = attachmentVal,
+                    user = user,
                 )
 
                 val files = if (file != null) {
@@ -115,7 +136,7 @@ class TodoViewModel(private val scope: CoroutineScope) {
                     ))
                 } else emptyList()
 
-                client.collection("todos", TodoUpdate::class).update(id, updateObj, files = files)
+                client.collection("todos", Todo::class).update(id, updateObj, files = files)
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -126,8 +147,8 @@ class TodoViewModel(private val scope: CoroutineScope) {
         scope.launch(Dispatchers.IO) {
             val id = todo.id ?: return@launch
             try {
-                val updateObj = TodoUpdate(completed = !todo.completed)
-                client.collection("todos", TodoUpdate::class).update(id, updateObj)
+                val updateObj = todo.copy(completed = !todo.completed)
+                client.collection("todos", Todo::class).update(id, updateObj)
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -144,24 +165,3 @@ class TodoViewModel(private val scope: CoroutineScope) {
         }
     }
 }
-
-@Serializable
-class TodoUpdate(
-    val text: String? = null,
-    val completed: Boolean? = null,
-    val attachment: String? = null
-) : RecordModel() {
-    // Override RecordModel properties to exclude them from serialization if possible?
-    // RecordModel uses @EncodeDefault(EncodeDefault.Mode.NEVER) for id/created/updated.
-    // So they are only encoded if they have a value?
-    // Default value in RecordModel is null.
-    // So they are skipped by default.
-    // So extending RecordModel is safe regarding sending id/created/updated in body, as long as we don't set them.
-}
-
-@Serializable
-class TodoCreate(
-    val text: String,
-    val completed: Boolean,
-    val user: String
-) : RecordModel()

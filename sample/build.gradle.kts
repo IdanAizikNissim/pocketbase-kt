@@ -43,6 +43,7 @@ kotlin {
                 implementation(libs.multiplatform.settings)
                 implementation(libs.multiplatform.settings.no.arg)
                 implementation(libs.kotlinx.serialization.json)
+                implementation(libs.coil.compose)
             }
         }
 
@@ -70,12 +71,12 @@ kotlin {
 
 android {
     namespace = "io.pocketbase.sample"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "io.pocketbase.sample"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
     }
@@ -83,4 +84,9 @@ android {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
     }
+}
+
+repositories {
+    mavenCentral()
+    google()
 }

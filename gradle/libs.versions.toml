@@ -12,6 +12,7 @@ compose-plugin = "1.7.0"
 androidx-activityCompose = "1.9.3"
 filekit = "0.8.8"
 multiplatform-settings = "1.2.0"
+coil = "3.3.0"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -32,6 +33,7 @@ filekit-compose = { module = "io.github.vinceglb:filekit-compose", version.ref =
 filekit-core = { module = "io.github.vinceglb:filekit-core", version.ref = "filekit" }
 multiplatform-settings = { module = "com.russhwolf:multiplatform-settings", version.ref = "multiplatform-settings" }
 multiplatform-settings-no-arg = { module = "com.russhwolf:multiplatform-settings-no-arg", version.ref = "multiplatform-settings" }
+coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
 
 [plugins]
 androidLibrary = { id = "com.android.library", version.ref = "agp" }

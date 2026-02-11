@@ -96,7 +96,7 @@ fun TodoItem(
             Spacer(Modifier.width(8.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(todo.text, style = MaterialTheme.typography.body1)
-                if (todo.attachment.isNotEmpty()) {
+                if (todo.attachment?.isNotEmpty() == true) {
                     Text("Attachment: ${todo.attachment}", style = MaterialTheme.typography.caption)
                 }
             }
@@ -135,7 +135,10 @@ fun AddTodoDialog(onDismiss: () -> Unit, onAdd: (String, PlatformFile?) -> Unit)
             }
         },
         confirmButton = {
-            Button(onClick = { onAdd(text, file) }) {
+            Button(onClick = {
+                println("DEBUG: Add button clicked, text='$text', file=${file?.name}")
+                onAdd(text, file)
+            }) {
                 Text("Add")
             }
         },

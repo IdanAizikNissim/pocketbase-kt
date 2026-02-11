@@ -4,8 +4,9 @@ import io.pocketbase.dtos.RecordModel
 import kotlinx.serialization.Serializable
 
 @Serializable
-class Todo(
+data class Todo(
     val text: String = "",
     val completed: Boolean = false,
-    val attachment: String = "",
+    val attachment: String? = null,
+    val user: String,
 ) : RecordModel()
