@@ -50,8 +50,8 @@ class BatchService internal constructor(
         query: Map<String, Any?> = emptyMap(),
         headers: Map<String, String> = emptyMap(),
     ): List<BatchResult<*>> {
-        val jsonBody = mutableListOf<RawRequest>()
-        val files = mutableListOf<File>()
+        val jsonBody = ArrayList<RawRequest>(requests.size)
+        val files = ArrayList<File>(requests.sumOf { it.files.size })
 
         requests.forEach { request ->
             jsonBody +=
