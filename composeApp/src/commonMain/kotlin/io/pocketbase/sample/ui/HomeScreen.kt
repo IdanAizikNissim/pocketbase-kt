@@ -5,10 +5,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,15 +32,15 @@ fun HomeScreen(
             TopAppBar(
                 title = { Text("Todos") },
                 actions = {
-                    IconButton(onClick = onLogout) {
-                        Icon(Icons.AutoMirrored.Filled.ExitToApp, "Logout")
+                    TextButton(onClick = onLogout) {
+                        Text("Logout")
                     }
                 }
             )
         },
         floatingActionButton = {
             FloatingActionButton(onClick = { showAddDialog = true }) {
-                Icon(Icons.Default.Add, "Add")
+                Text("+")
             }
         }
     ) { padding ->
@@ -100,8 +96,8 @@ fun TodoItem(
                     Text("Attachment: ${todo.attachment}", style = MaterialTheme.typography.caption)
                 }
             }
-            IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, "Delete")
+            TextButton(onClick = onDelete) {
+                Text("Delete")
             }
         }
     }

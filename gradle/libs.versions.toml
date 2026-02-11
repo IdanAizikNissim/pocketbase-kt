@@ -8,8 +8,9 @@ coroutines = "1.10.2"
 ktlint = "12.1.2"
 skie = "0.10.4"
 mavenPublish = "0.34.0"
-compose-plugin = "1.7.0"
-androidx-activityCompose = "1.9.3"
+compose-plugin = "1.8.2"
+composeMultiplatform = "1.8.2"
+androidx-activityCompose = "1.12.2"
 filekit = "0.8.8"
 multiplatform-settings = "1.2.0"
 coil = "3.3.0"
@@ -35,6 +36,13 @@ multiplatform-settings = { module = "com.russhwolf:multiplatform-settings", vers
 multiplatform-settings-no-arg = { module = "com.russhwolf:multiplatform-settings-no-arg", version.ref = "multiplatform-settings" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
 
+compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "composeMultiplatform" }
+compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "composeMultiplatform" }
+compose-material = { module = "org.jetbrains.compose.material:material", version.ref = "composeMultiplatform" }
+compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "composeMultiplatform" }
+compose-components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "composeMultiplatform" }
+compose-desktop = { module = "org.jetbrains.compose.desktop:desktop-jvm", version.ref = "composeMultiplatform" }
+
 [plugins]
 androidLibrary = { id = "com.android.library", version.ref = "agp" }
 androidApplication = { id = "com.android.application", version.ref = "agp" }
@@ -43,5 +51,5 @@ serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref 
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
 skie = { id = "co.touchlab.skie", version.ref = "skie" }
 mavenPublish = { id = "com.vanniktech.maven.publish", version.ref = "mavenPublish" }
-jetbrainsCompose = { id = "org.jetbrains.compose", version.ref = "compose-plugin" }
-compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
+composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }

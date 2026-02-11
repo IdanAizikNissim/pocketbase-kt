@@ -1,27 +1,26 @@
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidApplication)
-    alias(libs.plugins.jetbrainsCompose)
-    alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.composeMultiplatform)
+    alias(libs.plugins.composeCompiler)
     alias(libs.plugins.serialization)
 }
 
 kotlin {
     androidTarget {
         compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8)
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
         }
     }
 
     jvm("desktop")
 
     listOf(
-        iosX64(),
         iosArm64(),
         iosSimulatorArm64()
     ).forEach {
         it.binaries.framework {
-            baseName = "SampleApp"
+            baseName = "ComposeApp"
             isStatic = true
         }
     }
@@ -29,17 +28,15 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation(compose.runtime)
-                implementation(compose.foundation)
-                implementation(compose.material)
-                implementation(compose.ui)
-                implementation(compose.components.resources)
-                implementation(compose.components.uiToolingPreview)
                 implementation(project(":pocketbase"))
+                implementation(libs.compose.runtime)
+                implementation(libs.compose.foundation)
+                implementation(libs.compose.material)
+                implementation(libs.compose.ui)
+                implementation(libs.compose.components.resources)
                 implementation(libs.filekit.compose)
                 implementation(libs.filekit.core)
-                implementation(libs.kotlinx.coroutines.test) // Using test mainly for runBlocking if needed, or I should add coroutines-core?
-                // pocketbase already brings coroutines-core transitively? Yes, via ktor.
+                implementation(libs.kotlinx.coroutines.test)
                 implementation(libs.multiplatform.settings)
                 implementation(libs.multiplatform.settings.no.arg)
                 implementation(libs.kotlinx.serialization.json)
@@ -56,7 +53,7 @@ kotlin {
 
         val desktopMain by getting {
             dependencies {
-                implementation(compose.desktop.currentOs)
+                implementation(libs.compose.desktop)
                 implementation(libs.ktor.client.cio)
             }
         }
@@ -71,7 +68,7 @@ kotlin {
 
 android {
     namespace = "io.pocketbase.sample"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "io.pocketbase.sample"
@@ -81,8 +78,8 @@ android {
         versionName = "1.0"
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
 }
 
