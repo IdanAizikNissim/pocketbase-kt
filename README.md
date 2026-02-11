@@ -420,7 +420,7 @@ The supported placeholder parameter values are:
 
 ```kotlin
 // Builds and returns an absolute record file url for the provided filename.
-🔓 pb.files.getUrlgetUrl(
+🔓 pb.files.getUrl(
   record: RecordModel,
   fileName: String,
   thumb: String? = null,
@@ -441,109 +441,15 @@ The supported placeholder parameter values are:
 
 #### AdminService
 
+> The `AdminService` is removed in PocketBase v0.23+.
+> Admins are now regular records in the system `_superusers` collection.
+> You can use the standard `RecordService` methods to interact with them.
+
 ```kotlin
-// Authenticates an admin account by its email and password.
-🔓 pb.admins.authWithPassword(
-  email: String,
+// Authenticates a superuser by its email and password.
+🔓 pb.collection("_superusers").authWithPassword(
+  usernameOrEmail: String,
   password: String,
-  body: Map<String, Any?> = emptyMap(),
-  query: Map<String, Any?> = emptyMap(),
-  headers: Map<String, String> = emptyMap(),
-)
-
-// Refreshes the current admin authenticated model and token.
-🔐 pb.admins.authRefresh(
-  body: Map<String, Any?> = emptyMap(),
-  query: Map<String, Any?> = emptyMap(),
-  headers: Map<String, String> = emptyMap(),
-)
-
-// Sends an admin password reset email.
-🔓 pb.admins.requestPasswordReset(
-  email: String,
-  body: Map<String, Any?> = emptyMap(),
-  query: Map<String, Any?> = emptyMap(),
-  headers: Map<String, String> = emptyMap(),
-)
-
-// Confirms an admin password reset request.
-🔓 pb.admins.confirmPasswordReset(
-  passwordResetToken: String,
-  password: String,
-  passwordConfirm: String,
-  body: Map<String, Any?> = emptyMap(),
-  query: Map<String, Any?> = emptyMap(),
-  headers: Map<String, String> = emptyMap(),
-)
-
-// Returns a paginated admins list.
-🔐 pb.admins.getList(
-  page: Int = 1,
-  perPage: Int = 30,
-  skipTotal: Boolean = false,
-  expand: String? = null,
-  filter: String? = null,
-  sort: String? = null,
-  fields: String? = null,
-  query: Map<String, Any?> = emptyMap(),
-  headers: Map<String, String> = emptyMap(),
-)
-
-// Returns a list with all admins batch fetched at once.
-🔐 pb.admins.getFullList(
-  batch: Int = 500,
-  expand: String? = null,
-  filter: String? = null,
-  sort: String? = null,
-  fields: String? = null,
-  query: Map<String, Any?> = emptyMap(),
-  headers: Map<String, String> = emptyMap(),
-)
-
-// Returns the first found admin matching the specified filter.
-🔐 pb.admins.getFirstListItem(
-  filter: String,
-  expand: String? = null,
-  fields: String? = null,
-  query: Map<String, Any?> = emptyMap(),
-  headers: Map<String, String> = emptyMap(),
-)
-
-// Returns a single admin by their id.
-🔐 pb.admins.getOne(
-  id: String,
-  expand: String? = null,
-  fields: String? = null,
-  query: Map<String, Any?> = emptyMap(),
-  headers: Map<String, String> = emptyMap(),
-)
-
-// Creates a new admin.
-🔐 pb.admins.create(
-  body: T? = null,
-  expand: String? = null,
-  fields: String? = null,
-  query: Map<String, Any?> = emptyMap(),
-  headers: Map<String, String> = emptyMap(),
-  files: List<File> = emptyList(),
-)
-
-// Updates an existing admin by their id.
-🔐 pb.admins.update(
-  id: String,
-  body: AdminModel?,
-  expand: String?,
-  fields: String?,
-  query: Map<String, Any?>,
-  headers: Map<String, String>,
-)
-
-// Deletes a single admin by their id.
-🔐 pb.admins.delete(
-  id: String,
-  body: AdminModel?,
-  query: Map<String, Any?>,
-  headers: Map<String, String>,
 )
 ```
 
@@ -606,7 +512,7 @@ The supported placeholder parameter values are:
 
 ```kotlin
 // Checks the health status of the api.
-🔓 pb.healthCheck.checkcheck(
+🔓 pb.healthCheck.check(
   query: Map<String, Any?> = emptyMap(),
   headers: Map<String, String> = emptyMap(),
 )

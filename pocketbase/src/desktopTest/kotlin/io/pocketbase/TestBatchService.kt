@@ -1,5 +1,8 @@
 package io.pocketbase
 
+import io.ktor.utils.io.core.toByteArray
+import io.pocketbase.dtos.File
+import io.pocketbase.models.Demo
 import io.pocketbase.models.Todo
 import io.pocketbase.models.TodoList
 import kotlinx.coroutines.test.runTest
@@ -8,6 +11,7 @@ import org.junit.runners.MethodSorters
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 class TestBatchService : TestService() {
@@ -77,27 +81,32 @@ class TestBatchService : TestService() {
                     idOrName = "todo_lists",
                 )
 
+            // Create a list for deletion test
             val list =
-                todoListCollection.getFirstListItem(
-                    filter =
-                        pb.filter(
-                            expr = "title = {:title}",
-                            query = mapOf("title" to "list number 1"),
+                todoListCollection.create(
+                    body =
+                        TodoList(
+                            title = "list for delete",
                         ),
                 )
 
-            assertNotNull(list?.id)
+            assertNotNull(list.id)
 
+            // Create some todos to delete
             val todosCollection =
                 pb.collection<Todo>(
                     idOrName = "todos",
                 )
+
+            todosCollection.create(Todo(listId = list.id!!, text = "delete me 1"))
+            todosCollection.create(Todo(listId = list.id!!, text = "delete me 2"))
+
             val todos =
                 todosCollection.getList(
                     filter =
                         pb.filter(
                             expr = "list_id = {:list_id}",
-                            query = mapOf("list_id" to list!!.id!!),
+                            query = mapOf("list_id" to list.id!!),
                         ),
                 )
 
@@ -113,8 +122,42 @@ class TestBatchService : TestService() {
             }
 
             val result = batch.send()
-            assertEquals(3, result.size)
+            assertEquals(2, result.size)
 
             todoListCollection.delete(list.id!!)
+        }
+
+    @Test
+    fun test_2_createWithFile() =
+        runTest {
+            authWithAdmin()
+
+            val batch = pb.createBatch()
+            with(batch.collection<Demo>("demo")) {
+                create(
+                    body = Demo(title = "test_file_upload"),
+                    files = listOf(
+                        File(
+                            field = "file",
+                            fileName = "test.txt",
+                            data = "content".toByteArray()
+                        )
+                    )
+                )
+            }
+
+            val result = batch.send()
+            assertEquals(1, result.size)
+            val demo = result.first().body as Demo
+            assertEquals("test_file_upload", demo.title)
+
+            // If file upload worked, the file name should be present
+            // Note: This relies on 'file' being the correct field name in the collection
+            // If it fails because file is null, check schema. But if it fails, it proves current BatchService is broken.
+            assertNotNull(demo.file)
+            assertTrue(demo.file!!.isNotEmpty())
+
+            // Clean up
+            pb.collection<Demo>("demo").delete(demo.id!!)
         }
 }

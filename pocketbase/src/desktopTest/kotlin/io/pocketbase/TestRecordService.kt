@@ -159,12 +159,14 @@ class TestRecordService : TestService() {
     private suspend fun createUser(
         username: String,
         password: String,
+        email: String = "",
     ): User {
         val user =
             pb.collection<User>("users").create(
                 body =
                     User(
                         username = username,
+                        email = email,
                         password = password,
                         passwordConfirm = password,
                     ),
