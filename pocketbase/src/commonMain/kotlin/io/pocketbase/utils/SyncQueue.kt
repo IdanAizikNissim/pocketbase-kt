@@ -3,53 +3,38 @@ package io.pocketbase.utils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 
 typealias AsyncOperation = suspend () -> Unit
 
 class SyncQueue internal constructor(
     private val onComplete: (() -> Unit)? = null,
 ) : CoroutineScope by CoroutineScope(Dispatchers.IO) {
-    private val channel = Channel<AsyncOperation>(Channel.UNLIMITED)
-    private val mutex = Mutex()
-    private var isProcessing = false
+    private val operations: MutableList<AsyncOperation> = mutableListOf()
 
     fun enqueue(op: AsyncOperation) {
-        channel.trySend(op)
-        launch {
-            mutex.withLock {
-                if (!isProcessing) {
-                    isProcessing = true
-                    dequeue()
-                }
-            }
+        operations.add(op)
+
+        if (operations.size == 1) {
+            dequeue()
         }
     }
 
     private fun dequeue() {
-        launch {
-            while (true) {
-                val op = channel.tryReceive().getOrNull()
-                if (op == null) {
-                    mutex.withLock {
-                        if (channel.isEmpty) {
-                            isProcessing = false
-                            onComplete?.invoke()
-                            return@launch
-                        }
-                    }
-                    continue
-                }
+        if (operations.isEmpty()) {
+            return
+        }
 
-                try {
-                    op.invoke()
-                } catch (e: Exception) {
-                    // Keep the worker running even if an operation fails
-                }
+        launch {
+            operations.first().invoke()
+            operations.removeAt(0)
+
+            if (operations.isEmpty()) {
+                onComplete?.invoke()
+                return@launch
             }
+
+            dequeue()
         }
     }
 }
