@@ -40,6 +40,9 @@ kotlin {
                 implementation(libs.filekit.core)
                 implementation(libs.kotlinx.coroutines.test) // Using test mainly for runBlocking if needed, or I should add coroutines-core?
                 // pocketbase already brings coroutines-core transitively? Yes, via ktor.
+                implementation(libs.multiplatform.settings)
+                implementation(libs.multiplatform.settings.no.arg)
+                implementation(libs.kotlinx.serialization.json)
             }
         }
 

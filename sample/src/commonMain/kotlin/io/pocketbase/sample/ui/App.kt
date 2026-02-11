@@ -3,6 +3,7 @@ package io.pocketbase.sample.ui
 import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.*
 import io.pocketbase.sample.viewmodel.AuthViewModel
+import io.pocketbase.sample.viewmodel.TodoViewModel
 
 enum class AuthScreen {
     Login,
@@ -14,15 +15,27 @@ enum class AuthScreen {
 fun App() {
     MaterialTheme {
         val scope = rememberCoroutineScope()
-        // Ideally ViewModel should survive config changes but for sample remember is ok
         val authViewModel = remember { AuthViewModel(scope) }
         val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
 
         if (isLoggedIn) {
-            HomeScreen(
-                authViewModel = authViewModel,
-                onLogout = { authViewModel.logout() }
-            )
+            val todoViewModel = remember { TodoViewModel(scope) }
+            var selectedTodoId by remember { mutableStateOf<String?>(null) }
+
+            if (selectedTodoId != null) {
+                TodoDetailScreen(
+                    todoId = selectedTodoId!!,
+                    viewModel = todoViewModel,
+                    onBack = { selectedTodoId = null }
+                )
+            } else {
+                HomeScreen(
+                    authViewModel = authViewModel,
+                    todoViewModel = todoViewModel, // Pass shared VM
+                    onLogout = { authViewModel.logout() },
+                    onTodoClick = { todo -> selectedTodoId = todo.id }
+                )
+            }
         } else {
             var screen by remember { mutableStateOf(AuthScreen.Login) }
 

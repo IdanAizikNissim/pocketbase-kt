@@ -1,5 +1,6 @@
 package io.pocketbase.sample.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -7,7 +8,7 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,11 +24,10 @@ import io.pocketbase.sample.viewmodel.TodoViewModel
 @Composable
 fun HomeScreen(
     authViewModel: AuthViewModel,
-    onLogout: () -> Unit
+    todoViewModel: TodoViewModel,
+    onLogout: () -> Unit,
+    onTodoClick: (Todo) -> Unit
 ) {
-    val scope = rememberCoroutineScope()
-    // In a real app, use viewModel() factory or DI
-    val todoViewModel = remember { TodoViewModel(scope) }
     val todos by todoViewModel.todos.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
 
@@ -37,7 +37,7 @@ fun HomeScreen(
                 title = { Text("Todos") },
                 actions = {
                     IconButton(onClick = onLogout) {
-                        Icon(Icons.Default.ExitToApp, "Logout")
+                        Icon(Icons.AutoMirrored.Filled.ExitToApp, "Logout")
                     }
                 }
             )
@@ -56,7 +56,8 @@ fun HomeScreen(
                 TodoItem(
                     todo = todo,
                     onToggle = { todoViewModel.toggleTodo(todo) },
-                    onDelete = { todoViewModel.deleteTodo(todo) }
+                    onDelete = { todo.id?.let { todoViewModel.deleteTodo(it) } },
+                    onClick = { onTodoClick(todo) }
                 )
             }
         }
@@ -77,10 +78,11 @@ fun HomeScreen(
 fun TodoItem(
     todo: Todo,
     onToggle: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onClick: () -> Unit
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable(onClick = onClick),
         elevation = 2.dp
     ) {
         Row(

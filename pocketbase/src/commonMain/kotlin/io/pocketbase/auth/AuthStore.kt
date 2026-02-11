@@ -39,7 +39,7 @@ open class AuthStore {
             return exp > kotlin.time.Clock.System.now().epochSeconds
         }
 
-    internal open fun save(
+    open fun save(
         newToken: String,
         newModel: Model,
     ) {

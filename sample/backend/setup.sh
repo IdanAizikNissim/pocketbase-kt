@@ -29,5 +29,5 @@ if [ ! -f "pocketbase" ]; then
     chmod +x pocketbase
 fi
 
-echo "Starting PocketBase at http://127.0.0.1:8090"
-./pocketbase serve --http=127.0.0.1:8090
+echo "Starting PocketBase at http://0.0.0.0:8090"
+./pocketbase serve --http=0.0.0.0:8090

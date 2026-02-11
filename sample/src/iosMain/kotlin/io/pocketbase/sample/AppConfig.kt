@@ -1,3 +1,3 @@
 package io.pocketbase.sample
 
-actual val SERVER_URL: String = "http://127.0.0.1:8090"
+actual val SERVER_URL: String = "http://localhost:8090"
