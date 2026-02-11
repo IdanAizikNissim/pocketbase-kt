@@ -32,30 +32,22 @@ class SyncQueue internal constructor(
     private fun dequeue() {
         launch {
             while (true) {
-                val result = channel.tryReceive()
-                val op = result.getOrNull()
-
+                val op = channel.tryReceive().getOrNull()
                 if (op == null) {
-                    mutex.withLock { isProcessing = false }
-                    break
+                    mutex.withLock {
+                        if (channel.isEmpty) {
+                            isProcessing = false
+                            onComplete?.invoke()
+                            return@launch
+                        }
+                    }
+                    continue
                 }
 
                 try {
                     op.invoke()
-                } finally {
-                    val isDone = mutex.withLock {
-                        if (channel.isEmpty) {
-                            isProcessing = false
-                            true
-                        } else {
-                            false
-                        }
-                    }
-
-                    if (isDone) {
-                        onComplete?.invoke()
-                        break
-                    }
+                } catch (e: Exception) {
+                    // Keep the worker running even if an operation fails
                 }
             }
         }
