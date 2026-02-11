@@ -6,7 +6,6 @@ import io.pocketbase.PocketBase
 import io.pocketbase.dtos.SubmitSubscriptionsRequest
 import io.pocketbase.http.Incoming
 import io.pocketbase.http.SSEClient
-import io.pocketbase.http.SSEClientCancellationException
 import io.pocketbase.http.json
 import io.pocketbase.utils.encoder.DefaultUrlEncoder
 import kotlinx.coroutines.CompletableDeferred
@@ -119,7 +118,7 @@ internal class RealtimeService(
     suspend fun unsubscribeByPrefix(topicPrefix: String) {
         val beforeSize = subscriptions.size
         subscriptions.apply {
-            keys.forEach {
+            keys.toList().forEach {
                 if ("$it?".startsWith(topicPrefix)) {
                     remove(it)
                 }
@@ -157,7 +156,8 @@ internal class RealtimeService(
                 continue
             }
 
-            if (!needToSubmit && afterSize == 0) {
+            if (afterSize == 0) {
+                subscriptions.remove(key)
                 needToSubmit = true
             }
         }
@@ -223,11 +223,6 @@ internal class RealtimeService(
             }
         }
         .launchIn(CoroutineScope(Dispatchers.IO))
-        .invokeOnCompletion {
-            if (it is SSEClientCancellationException && it.shouldReconnect) {
-                connectSSEClient()
-            }
-        }
 }
 
 @Suppress("UNCHECKED_CAST")

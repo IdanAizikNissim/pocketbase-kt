@@ -9,6 +9,7 @@ import io.ktor.client.plugins.sse.SSE
 import io.ktor.client.request.header
 import io.ktor.serialization.kotlinx.json.json
 import io.pocketbase.auth.AuthStore
+import kotlin.time.Duration.Companion.milliseconds
 
 internal class HttpClientBuilder(
     private val factory: HttpClientFactory,
@@ -19,12 +20,22 @@ internal class HttpClientBuilder(
         port: Int?,
         lang: String,
         httpTimeout: Long,
+        sseReconnectionTime: Long,
+        maxReconnectionAttempts: Long,
         logLevel: LogLevel,
         authStore: AuthStore,
     ): HttpClient =
         factory.create { config ->
             with(config) {
-                install(SSE)
+                install(SSE) {
+                    this.reconnectionTime = sseReconnectionTime.milliseconds
+                    this.maxReconnectionAttempts =
+                        if (maxReconnectionAttempts > Int.MAX_VALUE) {
+                            Int.MAX_VALUE
+                        } else {
+                            maxReconnectionAttempts.toInt()
+                        }
+                }
 
                 install(HttpTimeout) {
                     requestTimeoutMillis = httpTimeout
