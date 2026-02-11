@@ -76,8 +76,9 @@ class RecordService<T : RecordModel> internal constructor(
         fields: String?,
         query: Map<String, Any?>,
         headers: Map<String, String>,
+        files: List<io.pocketbase.dtos.File>,
     ): T =
-        super.update(id, body, expand, fields, query, headers).also {
+        super.update(id, body, expand, fields, query, headers, files).also {
             onAuthModelChanged(id) {
                 client.authStore.save(client.authStore.token, it)
             }

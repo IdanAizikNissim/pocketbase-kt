@@ -186,6 +186,7 @@ abstract class BaseCRUDService<T : @Serializable Any> internal constructor(
         fields: String? = null,
         query: Map<String, Any?> = emptyMap(),
         headers: Map<String, String> = emptyMap(),
+        files: List<File> = emptyList(),
     ): T {
         val enrichedQuery =
             query +
@@ -200,6 +201,7 @@ abstract class BaseCRUDService<T : @Serializable Any> internal constructor(
             body = body,
             query = enrichedQuery,
             headers = headers,
+            files = files,
         ).result()
     }
 
