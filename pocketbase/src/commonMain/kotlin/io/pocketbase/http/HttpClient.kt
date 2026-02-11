@@ -33,6 +33,8 @@ internal class HttpClient(
             port = config.port,
             lang = config.lang,
             httpTimeout = config.httpTimeout,
+            sseReconnectionTime = config.sseReconnectionTime,
+            maxReconnectionAttempts = config.maxReconnectionRetries,
             logLevel = config.logLevel,
             authStore = authStore,
         )
