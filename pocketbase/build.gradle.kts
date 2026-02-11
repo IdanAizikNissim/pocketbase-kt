@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework
+
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.androidLibrary)
@@ -8,19 +10,28 @@ plugins {
 }
 
 kotlin {
+    val xcframeworkName = "PocketBase"
+    val xcf = XCFramework(xcframeworkName)
+
     androidTarget()
 
     iosX64()
     iosArm64()
     iosSimulatorArm64()
+    macosX64()
+    macosArm64()
     listOf(
         iosX64(),
         iosArm64(),
         iosSimulatorArm64(),
+        macosX64(),
+        macosArm64(),
     ).forEach {
         it.binaries.framework {
-            baseName = "PocketBase"
+            baseName = xcframeworkName
             isStatic = true
+            binaryOption("bundleId", "io.pocketbase.PocketBase")
+            xcf.add(this)
         }
     }
 
@@ -50,6 +61,9 @@ kotlin {
             implementation(libs.ktor.client.android)
         }
         iosMain.dependencies {
+            implementation(libs.ktor.client.darwin)
+        }
+        macosMain.dependencies {
             implementation(libs.ktor.client.darwin)
         }
 

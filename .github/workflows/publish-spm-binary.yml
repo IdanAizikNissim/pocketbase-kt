@@ -1,0 +1,114 @@
+name: Publish SPM Binary
+
+on:
+  push:
+    tags:
+      - '*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish-spm-binary:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve release version
+        id: version
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME}"
+          if [[ ! "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Skipping non-semver tag: ${VERSION}"
+            echo "is_semver=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "is_semver=true" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "spm_tag=${VERSION}-spm" >> "$GITHUB_OUTPUT"
+          echo "asset_url=https://github.com/${GITHUB_REPOSITORY}/releases/download/${VERSION}/PocketBase.xcframework.zip" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Java
+        if: steps.version.outputs.is_semver == 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Xcode
+        if: steps.version.outputs.is_semver == 'true'
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Build XCFramework
+        if: steps.version.outputs.is_semver == 'true'
+        run: ./gradlew :pocketbase:assemblePocketBaseXCFramework
+
+      - name: Zip XCFramework
+        if: steps.version.outputs.is_semver == 'true'
+        shell: bash
+        run: |
+          cd pocketbase/build/XCFrameworks/release
+          ditto -c -k --sequesterRsrc --keepParent PocketBase.xcframework PocketBase.xcframework.zip
+
+      - name: Create release and upload binary
+        if: steps.version.outputs.is_semver == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          files: pocketbase/build/XCFrameworks/release/PocketBase.xcframework.zip
+          fail_on_unmatched_files: true
+
+      - name: Compute checksum
+        if: steps.version.outputs.is_semver == 'true'
+        id: checksum
+        shell: bash
+        run: |
+          CHECKSUM=$(swift package compute-checksum pocketbase/build/XCFrameworks/release/PocketBase.xcframework.zip)
+          echo "checksum=${CHECKSUM}" >> "$GITHUB_OUTPUT"
+
+      - name: Update Package.swift on default branch
+        if: steps.version.outputs.is_semver == 'true'
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+          ASSET_URL: ${{ steps.version.outputs.asset_url }}
+          CHECKSUM: ${{ steps.checksum.outputs.checksum }}
+          VERSION: ${{ steps.version.outputs.version }}
+        shell: bash
+        run: |
+          git fetch origin "${DEFAULT_BRANCH}" --tags
+          git checkout "${DEFAULT_BRANCH}"
+          git pull --ff-only origin "${DEFAULT_BRANCH}"
+
+          perl -i -pe 's|url: ".*PocketBase\.xcframework\.zip"|url: "'"$ASSET_URL"'"|; s|checksum: ".*"|checksum: "'"$CHECKSUM"'"|' Package.swift
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if git diff --quiet -- Package.swift; then
+            echo "Package.swift already up to date for ${VERSION}"
+          else
+            git add Package.swift
+            git commit -m "chore(spm): update Package.swift for ${VERSION}"
+            git push origin "${DEFAULT_BRANCH}"
+          fi
+
+      - name: Create and push ${version}-spm tag
+        if: steps.version.outputs.is_semver == 'true'
+        env:
+          SPM_TAG: ${{ steps.version.outputs.spm_tag }}
+          VERSION: ${{ steps.version.outputs.version }}
+        shell: bash
+        run: |
+          if git rev-parse -q --verify "refs/tags/${SPM_TAG}" >/dev/null; then
+            echo "Tag ${SPM_TAG} already exists"
+            exit 1
+          fi
+          git tag -a "${SPM_TAG}" -m "SPM manifest for ${VERSION}"
+          git push origin "${SPM_TAG}"
