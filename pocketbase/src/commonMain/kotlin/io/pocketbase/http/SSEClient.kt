@@ -25,7 +25,7 @@ internal class SSEClient(
         flow {
             disconnect()
 
-            client =
+            val sseHttpClient =
                 HttpClientBuilder(HttpClientFactory()).build(
                     baseUrl = config.baseUrl,
                     protocol = config.protocol,
@@ -37,9 +37,10 @@ internal class SSEClient(
                     logLevel = config.logLevel,
                     authStore = authStore,
                 )
+            client = sseHttpClient
 
             try {
-                client?.sse(
+                sseHttpClient.sse(
                     path = url,
                     reconnectionTime = config.sseReconnectionTime.milliseconds,
                 ) {
@@ -56,6 +57,8 @@ internal class SSEClient(
                 }
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
+            } finally {
+                disconnect()
             }
         }
 
