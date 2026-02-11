@@ -501,6 +501,10 @@ The supported placeholder parameter values are:
 
 > Execute multiple operations in a single atomic transaction.
 
+> The `AdminService` is removed in PocketBase v0.23+.
+> Admins are now regular records in the system `_superusers` collection.
+> You can use the standard `RecordService` methods to interact with them.
+
 ```kotlin
 // Create a new batch instance.
 val batch = pb.createBatch()

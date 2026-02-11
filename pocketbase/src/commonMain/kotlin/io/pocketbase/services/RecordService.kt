@@ -136,6 +136,44 @@ class RecordService<T : RecordModel> internal constructor(
         ).authResponse()
     }
 
+    suspend fun authWithOAuth2Code(
+        provider: String,
+        code: String,
+        codeVerifier: String,
+        redirectUrl: String,
+        createData: Map<String, Any?> = emptyMap(),
+        expand: String? = null,
+        fields: String? = null,
+        body: Map<String, Any?> = emptyMap(),
+        query: Map<String, Any?> = emptyMap(),
+        headers: Map<String, String> = emptyMap(),
+    ): RecordAuth<T> {
+        val enrichedBody =
+            body +
+                mapOf(
+                    "provider" to provider,
+                    "code" to code,
+                    "codeVerifier" to codeVerifier,
+                    "redirectUrl" to redirectUrl,
+                    "createData" to createData,
+                )
+
+        val enrichedQuery =
+            query +
+                mapOfNotNull(
+                    "expand" to expand,
+                    "fields" to fields,
+                )
+
+        return client.send(
+            path = "$baseCollectionPath/auth-with-oauth2",
+            method = HttpMethod.Post,
+            body = enrichedBody,
+            query = enrichedQuery,
+            headers = headers,
+        ).authResponse()
+    }
+
     suspend fun authRefresh(
         expand: String? = null,
         fields: String? = null,
@@ -198,6 +236,50 @@ class RecordService<T : RecordModel> internal constructor(
 
         client.send(
             path = "$baseCollectionPath/confirm-password-reset",
+            method = HttpMethod.Post,
+            body = enrichedBody,
+            query = query,
+            headers = headers,
+        )
+    }
+
+    suspend fun requestEmailChange(
+        newEmail: String,
+        body: Map<String, Any?> = emptyMap(),
+        query: Map<String, Any?> = emptyMap(),
+        headers: Map<String, String> = emptyMap(),
+    ) {
+        val enrichedBody =
+            body +
+                mapOf(
+                    "newEmail" to newEmail,
+                )
+
+        client.send(
+            path = "$baseCollectionPath/request-email-change",
+            method = HttpMethod.Post,
+            body = enrichedBody,
+            query = query,
+            headers = headers,
+        )
+    }
+
+    suspend fun confirmEmailChange(
+        emailChangeToken: String,
+        password: String,
+        body: Map<String, Any?> = emptyMap(),
+        query: Map<String, Any?> = emptyMap(),
+        headers: Map<String, String> = emptyMap(),
+    ) {
+        val enrichedBody =
+            body +
+                mapOf(
+                    "token" to emailChangeToken,
+                    "password" to password,
+                )
+
+        client.send(
+            path = "$baseCollectionPath/confirm-email-change",
             method = HttpMethod.Post,
             body = enrichedBody,
             query = query,

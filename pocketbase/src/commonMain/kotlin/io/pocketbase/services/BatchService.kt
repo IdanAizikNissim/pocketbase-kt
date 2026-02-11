@@ -2,6 +2,7 @@ package io.pocketbase.services
 
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpMethod
+import io.ktor.utils.io.core.toByteArray
 import io.pocketbase.PocketBase
 import io.pocketbase.dtos.BatchResult
 import io.pocketbase.dtos.File
@@ -9,13 +10,17 @@ import io.pocketbase.dtos.RecordModel
 import io.pocketbase.http.json
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
 import kotlinx.serialization.serializer
 import kotlin.reflect.KClass
 
@@ -72,20 +77,37 @@ class BatchService internal constructor(
             }
         }
 
-        val enrichedBody =
-            body +
-                mapOf(
-                    "requests" to jsonBody,
+        val requestsJson = json.encodeToJsonElement(ListSerializer(RawRequest.serializer()), jsonBody)
+
+        val enrichedBody = buildJsonObject {
+            put("requests", requestsJson)
+            body.forEach { (key, value) ->
+                when (value) {
+                    null -> put(key, JsonNull)
+                    is Boolean -> put(key, value)
+                    is Number -> put(key, value)
+                    is String -> put(key, value)
+                    is JsonElement -> put(key, value)
+                    else -> put(key, value.toString())
+                }
+            }
+        }
+
+        val enrichedFiles =
+            files +
+                File(
+                    field = "@jsonPayload",
+                    data = enrichedBody.toString().toByteArray(),
                 )
 
         val response =
             client.send(
                 path = "/api/batch",
                 method = HttpMethod.Post,
-                body = enrichedBody,
+                body = null,
                 query = query,
                 headers = headers,
-                files = files,
+                files = enrichedFiles,
             )
 
         val jsonElement = json.parseToJsonElement(response.bodyAsText())
