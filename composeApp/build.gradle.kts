@@ -13,7 +13,11 @@ kotlin {
         }
     }
 
-    jvm("desktop")
+    jvm("desktop") {
+        mainRun {
+            mainClass = "io.pocketbase.sample.MainKt"
+        }
+    }
 
     listOf(
         iosArm64(),
@@ -53,7 +57,7 @@ kotlin {
 
         val desktopMain by getting {
             dependencies {
-                implementation(libs.compose.desktop)
+                implementation(compose.desktop.currentOs)
                 implementation(libs.ktor.client.cio)
             }
         }
@@ -86,4 +90,10 @@ android {
 repositories {
     mavenCentral()
     google()
+}
+
+compose.desktop {
+    application {
+        mainClass = "io.pocketbase.sample.MainKt"
+    }
 }
