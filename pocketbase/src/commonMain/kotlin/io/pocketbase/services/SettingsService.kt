@@ -39,7 +39,7 @@ class SettingsService internal constructor(
         ).body<JsonObject>().toSettings()
     }
 
-    suspend fun testS3(filesystem: String) {
+    suspend fun testS3(filesystem: String = "storage") {
         client.send(
             path = "/api/settings/test/s3",
             method = HttpMethod.Post,
@@ -54,13 +54,26 @@ class SettingsService internal constructor(
         email: String,
         template: String,
     ) {
+        testEmail(
+            collectionIdOrName = null,
+            toEmail = email,
+            emailTemplate = template,
+        )
+    }
+
+    suspend fun testEmail(
+        collectionIdOrName: String?,
+        toEmail: String,
+        emailTemplate: String,
+    ) {
         client.send(
             path = "/api/settings/test/email",
             method = HttpMethod.Post,
             body =
                 buildJsonObject {
-                    put("email", email)
-                    put("template", template)
+                    put("email", toEmail)
+                    put("template", emailTemplate)
+                    collectionIdOrName?.let { put("collection", it) }
                 }.toString(),
         )
     }

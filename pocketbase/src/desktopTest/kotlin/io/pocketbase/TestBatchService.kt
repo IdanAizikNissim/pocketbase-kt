@@ -160,4 +160,35 @@ class TestBatchService : TestService() {
             // Clean up
             pb.collection<Demo>("demo").delete(demo.id!!)
         }
+
+    @Test
+    fun test_3_upsertAndUpdate() =
+        runTest {
+            authWithAdmin()
+
+            val batch = pb.createBatch()
+            with(batch.collection<Demo>("demo")) {
+                upsert(
+                    body = Demo(title = "upsert_title"),
+                )
+            }
+            val upsertResult = batch.send()
+            assertEquals(1, upsertResult.size)
+            val upserted = upsertResult.first().body as Demo
+            assertNotNull(upserted.id)
+
+            val batch2 = pb.createBatch()
+            with(batch2.collection<Demo>("demo")) {
+                update(
+                    recordId = upserted.id!!,
+                    body = Demo(title = "upsert_title_updated"),
+                )
+            }
+            val updateResult = batch2.send()
+            assertEquals(1, updateResult.size)
+            val updated = updateResult.first().body as Demo
+            assertEquals("upsert_title_updated", updated.title)
+
+            pb.collection<Demo>("demo").delete(updated.id!!)
+        }
 }

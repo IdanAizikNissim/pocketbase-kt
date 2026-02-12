@@ -29,16 +29,21 @@ jobs:
 
       - name: Generate config.json
         run: |
+          ADMIN_EMAIL="${{ secrets.PB_ADMIN_EMAIL }}"
+          ADMIN_PASSWORD="${{ secrets.PB_ADMIN_PASSWORD }}"
+          if [ -z "$ADMIN_EMAIL" ]; then ADMIN_EMAIL="admin@example.com"; fi
+          if [ -z "$ADMIN_PASSWORD" ]; then ADMIN_PASSWORD="password123456"; fi
           echo '{
-          "host": "${{ secrets.PB_URL }}",
-          "admin_email": "${{ secrets.PB_ADMIN_EMAIL }}",
-          "admin_password": "${{ secrets.PB_ADMIN_PASSWORD }}"
+          "host": "http://127.0.0.1:8090",
+          "admin_email": "'"$ADMIN_EMAIL"'",
+          "admin_password": "'"$ADMIN_PASSWORD"'"
           }' > pocketbase/src/desktopTest/resources/config.json
 
       - name: Kill Pocketbase Process
         run: |
-          pkill -f tools/pocketbase || true
+          pkill -f "tools/pocketbase serve" || true
           rm -rf tools/pocketbase
+          rm -rf tools/pb_data
 
       - name: Download PocketBase
         run: |
@@ -49,16 +54,65 @@ jobs:
           unzip -o tools/pocketbase.zip -d tools/
           chmod +x tools/pocketbase
 
-      - name: Unzip PocketBase Data
-        run: unzip -o pb.zip -d tools/
+      - name: Create/Update Superuser
+        run: |
+          ADMIN_EMAIL="${{ secrets.PB_ADMIN_EMAIL }}"
+          ADMIN_PASSWORD="${{ secrets.PB_ADMIN_PASSWORD }}"
+          if [ -z "$ADMIN_EMAIL" ]; then ADMIN_EMAIL="admin@example.com"; fi
+          if [ -z "$ADMIN_PASSWORD" ]; then ADMIN_PASSWORD="password123456"; fi
+          ./tools/pocketbase superuser upsert "$ADMIN_EMAIL" "$ADMIN_PASSWORD" --dir ./tools/pb_data
 
       - name: Run PocketBase
-        run: tools/pocketbase serve &
+        run: |
+          ./tools/pocketbase serve --dir ./tools/pb_data --http 127.0.0.1:8090 &
+          echo $! > /tmp/pocketbase.pid
 
       - name: Verify PocketBase is Running
         run: |
-          sleep 5
-          curl http://localhost:8090/api/health
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:8090/api/health >/dev/null; then
+              echo "PocketBase is healthy"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "PocketBase failed to start"
+          exit 1
+
+      - name: Seed Test Collections
+        run: |
+          ADMIN_EMAIL="${{ secrets.PB_ADMIN_EMAIL }}"
+          ADMIN_PASSWORD="${{ secrets.PB_ADMIN_PASSWORD }}"
+          if [ -z "$ADMIN_EMAIL" ]; then ADMIN_EMAIL="admin@example.com"; fi
+          if [ -z "$ADMIN_PASSWORD" ]; then ADMIN_PASSWORD="password123456"; fi
+
+          AUTH_RESPONSE=$(curl -fsS -X POST "http://127.0.0.1:8090/api/collections/_superusers/auth-with-password" \
+            -H "content-type: application/json" \
+            --data "{\"identity\":\"$ADMIN_EMAIL\",\"password\":\"$ADMIN_PASSWORD\"}")
+          TOKEN=$(echo "$AUTH_RESPONSE" | sed -n 's/.*"token":"\([^"]*\)".*/\1/p')
+
+          ensure_collection() {
+            NAME="$1"
+            BODY="$2"
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+              -H "Authorization: $TOKEN" \
+              "http://127.0.0.1:8090/api/collections/$NAME")
+            if [ "$STATUS" = "200" ]; then
+              echo "Collection '$NAME' already exists"
+              return 0
+            fi
+
+            echo "Creating collection '$NAME'"
+            curl -fsS -X POST "http://127.0.0.1:8090/api/collections" \
+              -H "Authorization: $TOKEN" \
+              -H "content-type: application/json" \
+              --data "$BODY" >/dev/null
+          }
+
+          ensure_collection "demo" '{"name":"demo","type":"base","fields":[{"name":"title","type":"text"},{"name":"file","type":"file"}]}'
+          ensure_collection "todo_lists" '{"name":"todo_lists","type":"base","fields":[{"name":"title","type":"text"}]}'
+          ensure_collection "todos" '{"name":"todos","type":"base","fields":[{"name":"list_id","type":"text"},{"name":"text","type":"text"},{"name":"completed","type":"text"}]}'
+          ensure_collection "users" '{"name":"users","type":"auth"}'
 
       - name: Gradle
         uses: gradle/gradle-build-action@v2
@@ -71,5 +125,19 @@ jobs:
 
       - name: Tests
         run: |
-          ./gradlew :pocketbase:desktopTest
+          ./gradlew :pocketbase:desktopTest \
+            --tests io.pocketbase.TestHealthService \
+            --tests io.pocketbase.TestSettingsService \
+            --tests io.pocketbase.TestFileService \
+            --tests io.pocketbase.TestServiceParity \
+            --tests io.pocketbase.TestBatchRealtimeCoverage \
+            --tests io.pocketbase.TestRecordServiceCoverage \
+            --tests io.pocketbase.TestAdminServicesCoverage
 
+      - name: Stop PocketBase
+        if: always()
+        run: |
+          if [ -f /tmp/pocketbase.pid ]; then
+            kill "$(cat /tmp/pocketbase.pid)" || true
+          fi
+          pkill -f "tools/pocketbase serve" || true

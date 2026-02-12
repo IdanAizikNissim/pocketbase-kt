@@ -36,8 +36,15 @@ class TestFileService : TestService() {
                     fileName = record.file!!,
                     token = token,
                 )
+            val url2 =
+                pb.files.getURL(
+                    record = record,
+                    fileName = record.file!!,
+                    token = token,
+                )
 
             assertEquals("${config.host}/api/files/${record.collectionId}/${record.id}/${record.file}?token=$token", url)
+            assertEquals(url, url2)
 
             collection.delete(record.id!!)
         }

@@ -10,5 +10,8 @@ class TestHealthService : TestService() {
         runTest {
             val results = pb.healthCheck.check()
             assertEquals(200, results.code)
+
+            val aliasResults = pb.health.check()
+            assertEquals(200, aliasResults.code)
         }
 }
