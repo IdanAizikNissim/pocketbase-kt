@@ -146,6 +146,21 @@ class TestRecordService : TestService() {
             pb.collection<User>("users").delete(user.id!!)
         }
 
+    @Test
+    fun test_7_crud_listAndFullList() =
+        runTest {
+            authWithAdmin()
+
+            collection.create(Demo(title = "List smoke 1"))
+            collection.create(Demo(title = "List smoke 2"))
+
+            val list = collection.getList(page = 1, perPage = 10)
+            assertTrue(list.items.isNotEmpty())
+
+            val full = collection.getFullList(batch = 10)
+            assertTrue(full.isNotEmpty())
+        }
+
     private suspend fun getRecordByTitle(title: String): Demo? {
         return collection.getFirstListItem(
             filter =

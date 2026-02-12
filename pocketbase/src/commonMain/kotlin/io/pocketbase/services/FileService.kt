@@ -13,6 +13,7 @@ class FileService internal constructor(
 ) : BaseService(
         client = client,
     ) {
+    @Deprecated("Please use getURL()")
     fun getUrl(
         record: RecordModel,
         fileName: String,
@@ -20,9 +21,20 @@ class FileService internal constructor(
         token: String? = null,
         download: Boolean? = null,
         query: Map<String, Any?> = emptyMap(),
-    ): String? {
+    ): String {
+        return getURL(record, fileName, thumb, token, download, query)
+    }
+
+    fun getURL(
+        record: RecordModel,
+        fileName: String,
+        thumb: String? = null,
+        token: String? = null,
+        download: Boolean? = null,
+        query: Map<String, Any?> = emptyMap(),
+    ): String {
         if (fileName.isBlank() || record.id.isNullOrBlank()) {
-            return null
+            return ""
         }
 
         val params =

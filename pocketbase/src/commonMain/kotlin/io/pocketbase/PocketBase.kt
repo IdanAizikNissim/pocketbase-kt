@@ -10,10 +10,14 @@ import io.pocketbase.dtos.RecordModel
 import io.pocketbase.http.ClientException
 import io.pocketbase.http.HttpClient
 import io.pocketbase.http.SSEClient
+import io.pocketbase.services.BackupService
 import io.pocketbase.http.json
 import io.pocketbase.services.BatchService
+import io.pocketbase.services.CollectionService
+import io.pocketbase.services.CronService
 import io.pocketbase.services.FileService
 import io.pocketbase.services.HealthService
+import io.pocketbase.services.LogService
 import io.pocketbase.services.RealtimeService
 import io.pocketbase.services.RecordService
 import io.pocketbase.services.SettingsService
@@ -35,8 +39,13 @@ class PocketBase(
     private val client = HttpClient(authStore, config)
 
     val healthCheck = HealthService(this)
+    val health = healthCheck
     val files = FileService(this)
     val settings = SettingsService(this)
+    val collections = CollectionService(this)
+    val logs = LogService(this)
+    val backups = BackupService(this)
+    val crons = CronService(this)
     internal val realtime = RealtimeService(this, SSEClient(config, authStore))
 
     constructor(url: String, authStore: AuthStore = AuthStore()) : this(

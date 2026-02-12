@@ -25,7 +25,7 @@ abstract class BaseCRUDService<T : @Serializable Any> internal constructor(
     private val resultListSerializer = ResultList.serializer(serializer)
 
     suspend fun getFullList(
-        batch: Int = 500,
+        batch: Int = 1000,
         expand: String? = null,
         filter: String? = null,
         sort: String? = null,

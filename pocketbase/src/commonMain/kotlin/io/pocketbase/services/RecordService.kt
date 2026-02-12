@@ -8,6 +8,7 @@ import io.ktor.http.HttpStatusCode
 import io.pocketbase.PocketBase
 import io.pocketbase.auth.normalizeBase64
 import io.pocketbase.dtos.AuthMethods
+import io.pocketbase.dtos.ExternalAuth
 import io.pocketbase.dtos.RecordAuth
 import io.pocketbase.dtos.RecordModel
 import io.pocketbase.dtos.RecordSubscriptionEvent
@@ -285,6 +286,48 @@ class RecordService<T : RecordModel> internal constructor(
             query = query,
             headers = headers,
         )
+    }
+
+    @Deprecated("Use pb.collection(\"_externalAuths\") directly")
+    suspend fun listExternalAuths(
+        recordId: String,
+        query: Map<String, Any?> = emptyMap(),
+        headers: Map<String, String> = emptyMap(),
+    ): List<ExternalAuth> {
+        return client.collection<ExternalAuth>("_externalAuths").getFullList(
+            filter = client.filter("recordRef = {:id}", mapOf("id" to recordId)),
+            query = query,
+            headers = headers,
+        )
+    }
+
+    @Deprecated("Use pb.collection(\"_externalAuths\") directly")
+    suspend fun unlinkExternalAuth(
+        recordId: String,
+        provider: String,
+        query: Map<String, Any?> = emptyMap(),
+        headers: Map<String, String> = emptyMap(),
+    ): Boolean {
+        val externalAuth = client.collection<ExternalAuth>("_externalAuths").getFirstListItem(
+            filter =
+                client.filter(
+                    "recordRef = {:recordId} && provider = {:provider}",
+                    mapOf(
+                        "recordId" to recordId,
+                        "provider" to provider,
+                    ),
+                ),
+            query = query,
+            headers = headers,
+        ) ?: return false
+
+        client.collection<ExternalAuth>("_externalAuths").delete(
+            id = externalAuth.id ?: return false,
+            query = query,
+            headers = headers,
+        )
+
+        return true
     }
 
     suspend fun requestVerification(

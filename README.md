@@ -4,6 +4,8 @@ Kotlin SDK for interacting with the [PocketBase Web API](https://pocketbase.io/d
 
 - [PocketBase Kotlin SDK](#pocketbase-kotlin-sdk)
   - [Installation](#installation)
+  - [Compatibility](#compatibility)
+  - [CI sanity checks](#ci-sanity-checks)
   - [Caveats](#caveats)
     - [File upload](#file-upload)
     - [RecordModel](#recordmodel)
@@ -15,10 +17,13 @@ Kotlin SDK for interacting with the [PocketBase Web API](https://pocketbase.io/d
       - [_Crud handlers_](#crud-handlers)
       - [_Realtime handlers_](#realtime-handlers)
       - [_Auth handlers_](#auth-handlers)
+    - [CollectionService](#collectionservice)
+    - [LogService](#logservice)
+    - [BackupService](#backupservice)
+    - [CronService](#cronservice)
     - [FileService](#fileservice)
     - [BatchService](#batchservice)
     - [SettingsService](#settingsservice)
-    - [RealtimeService](#realtimeservice)
     - [HealthService](#healthservice)
 
 ## Installation
@@ -30,7 +35,7 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("io.pocketbase:pocketbase:0.1.11")
+                implementation("io.pocketbase:pocketbase:0.2.0")
             }
         }
     }
@@ -71,6 +76,27 @@ pb.collection<Example>("example").subscribe(
 > More detailed API docs and copy-paste examples could be found in the [API documentation for each service](https://pocketbase.io/docs/api-authentication)
 > or in the [Services section](#services) below.
 
+## Compatibility
+
+- PocketBase server: `v0.36.2`
+- Kotlin SDK: `io.pocketbase:pocketbase:0.2.0`
+
+## CI sanity checks
+
+The repository workflow `.github/workflows/sanity.yml` runs on pull requests and:
+
+- downloads and starts PocketBase `v0.36.2`
+- seeds required test collections
+- runs format checks
+- runs service coverage tests:
+  - `TestHealthService`
+  - `TestSettingsService`
+  - `TestFileService`
+  - `TestServiceParity`
+  - `TestBatchRealtimeCoverage`
+  - `TestRecordServiceCoverage`
+  - `TestAdminServicesCoverage`
+
 ### Swift Package Manager (iOS binary)
 
 This repository publishes an iOS `XCFramework` binary for SwiftPM via GitHub releases.
@@ -81,7 +107,7 @@ Add the dependency to your `Package.swift`:
 dependencies: [
     .package(
         url: "https://github.com/IdanAizikNissim/pocketbase-kt.git",
-        from: "0.1.11"
+        from: "0.2.0"
     )
 ]
 ```
@@ -275,223 +301,135 @@ The supported placeholder parameter values are:
 
 ## Services
 
+`PocketBase` now exposes:
+
+- `pb.collection<T>()` (RecordService)
+- `pb.files`
+- `pb.createBatch()`
+- `pb.settings`
+- `pb.collections`
+- `pb.logs`
+- `pb.backups`
+- `pb.crons`
+- `pb.health` (alias: `pb.healthCheck`)
+
 #### RecordService
 
 ###### _Crud handlers_
 
 ```kotlin
-// Returns a paginated records list.
-🔓 pb.collection<T: RecordModel>(collectionIdOrName).getList(
-    page: Int = 1,
-    perPage: Int = 30,
-    skipTotal: Boolean = false,
-    expand: String? = null,
-    filter: String? = null,
-    sort: String? = null,
-    fields: String? = null,
-    query: Map<String, Any?> = emptyMap(),
-    headers: Map<String, String> = emptyMap(),
-)
-
-// Returns a list with all records batch fetched at once.
-🔓 pb.collection<T: RecordModel>(collectionIdOrName).getFullList(
-    batch: Int = 500,
-    expand: String? = null,
-    filter: String? = null,
-    sort: String? = null,
-    fields: String? = null,
-    query: Map<String, Any?> = emptyMap(),
-    headers: Map<String, String> = emptyMap(),
-)
-
-// Returns the first found record matching the specified filter.
-🔓 pb.collection<T: RecordModel>(collectionIdOrName).getFirstListItem(
-    filter: String,
-    expand: String? = null,
-    fields: String? = null,
-    query: Map<String, Any?> = emptyMap(),
-    headers: Map<String, String> = emptyMap(),
-)
-
-// Returns a single record by its id.
-🔓 pb.collection<T: RecordModel>(collectionIdOrName).getOne(
-    id: String,
-    expand: String? = null,
-    fields: String? = null,
-    query: Map<String, Any?> = emptyMap(),
-    headers: Map<String, String> = emptyMap(),
-)
-
-// Creates (aka. register) a new record.
-🔓 pb.collection<T: RecordModel>(collectionIdOrName).create(
-    body: T? = null,
-    expand: String? = null,
-    fields: String? = null,
-    query: Map<String, Any?> = emptyMap(),
-    headers: Map<String, String> = emptyMap(),
-    files: List<File> = emptyList(),
-)
-
-// Updates an existing record by its id.
-🔓 pb.collection<T: RecordModel>(collectionIdOrName).update(
-    id: String,
-    body: T? = null,
-    expand: String? = null,
-    fields: String? = null,
-    query: Map<String, Any?> = emptyMap(),
-    headers: Map<String, String> = emptyMap(),
-    files: List<File> = emptyList(),
-)
-
-// Deletes a single record by its id.
-🔓 pb.collection<T: RecordModel>(collectionIdOrName).delete(
-    id: String,
-    body: Any? = null,
-    query: Map<String, Any?> = emptyMap(),
-    headers: Map<String, String> = emptyMap(),
-)
+pb.collection<T>("example").getList(...)
+pb.collection<T>("example").getFullList(...)
+pb.collection<T>("example").getFirstListItem(...)
+pb.collection<T>("example").getOne(id = "RECORD_ID", ...)
+pb.collection<T>("example").create(body = model, files = listOf(...), ...)
+pb.collection<T>("example").update(id = "RECORD_ID", body = model, files = listOf(...), ...)
+pb.collection<T>("example").delete(id = "RECORD_ID", ...)
 ```
 
 ###### _Realtime handlers_
 
 ```kotlin
-// Subscribe to realtime changes to the specified topic ("*" or recordId).
-//
-// It is safe to subscribe multiple times to the same topic.
-//
-// You can use the returned UnsubscribeFunc to remove a single registered subscription.
-// If you want to remove all subscriptions related to the topic use unsubscribe(topic).
-🔓 pb.collection<T>(collectionIdOrName).subscribe(
-    topic: String,
-    callback: (event: RecordSubscriptionEvent<T>) -> Unit,
-    expand: String? = null,
-    filter: String? = null,
-    fields: String? = null,
-    query: Map<String, Any?> = emptyMap(),
-    headers: Map<String, String> = emptyMap(),
+pb.collection<T>("example").subscribe(
+    topic = "*", // "*" or recordId
+    callback = { event -> println(event.action) },
+    expand = null,
+    filter = null,
+    fields = null,
+    query = emptyMap(),
+    headers = emptyMap(),
 )
 
-// Unsubscribe from all registered subscriptions to the specified topic ("*" or recordId).
-// If topic is not set, then it will remove all registered collection subscriptions.
-🔓 pb.collection<T>(collectionIdOrName).unsubscribe(topic: String = "")
+pb.collection<T>("example").unsubscribe(topic = "")
 ```
 
-###### _Auth handlers_
-
-> Available only for "auth" type collections.
+###### _Auth handlers_ (auth collections)
 
 ```kotlin
-// Returns all available application auth methods.
-🔓 pb.collection(collectionIdOrName).listAuthMethods(
-    query: Map<String, Any?> = emptyMap(),
-    headers: Map<String, String> = emptyMap(),
-)
-
-// Authenticates a record with their username/email and password.
-🔓 pb.collection(collectionIdOrName).authWithPassword(
-    usernameOrEmail: String,
-    password: String,
-    expand: String? = null,
-    fields: String? = null,
-    body: Map<String, Any?> = emptyMap(),
-    query: Map<String, Any?> = emptyMap(),
-    headers: Map<String, String> = emptyMap(),
-)
-
-// Refreshes the current authenticated record model and auth token.
-🔐 pb.collection(collectionIdOrName).authRefresh(
-    expand: String? = null,
-    fields: String? = null,
-    body: Map<String, Any?> = emptyMap(),
-    query: Map<String, Any?> = emptyMap(),
-    headers: Map<String, String> = emptyMap(),
-)
-
-// Sends a user password reset email.
-🔓 pb.collection(collectionIdOrName).requestPasswordReset(
-    email: String,
-    body: Map<String, Any?> = emptyMap(),
-    query: Map<String, Any?> = emptyMap(),
-    headers: Map<String, String> = emptyMap(),
-)
-
-// Confirms a record password reset request.
-🔓 pb.collection(collectionIdOrName).confirmPasswordReset(
-    passwordResetToken: String,
-    password: String,
-    passwordConfirm: String,
-    body: Map<String, Any?> = emptyMap(),
-    query: Map<String, Any?> = emptyMap(),
-    headers: Map<String, String> = emptyMap(),
-)
-
-// Sends a record verification email request.
-🔓 pb.collection(collectionIdOrName).requestVerification(
-    email: String,
-    body: Map<String, Any?> = emptyMap(),
-    query: Map<String, Any?> = emptyMap(),
-    headers: Map<String, String> = emptyMap(),
-)
-
-// Confirms a record email verification request.
-🔓 pb.collection(collectionIdOrName).confirmVerification(
-    verificationToken: String,
-    body: Map<String, Any?> = emptyMap(),
-    query: Map<String, Any?> = emptyMap(),
-    headers: Map<String, String> = emptyMap(),
-)
-
-// Requests a one-time password for authentication.
-🔓 pb.collection(collectionIdOrName).requestOTP(
-    email: String,
-    body: Map<String, Any?> = emptyMap(),
-    query: Map<String, Any?> = emptyMap(),
-    headers: Map<String, String> = emptyMap(),
-)
-
-// Authenticates with a one-time password.
-🔓 pb.collection(collectionIdOrName).authWithOTP(
-    otpId: String,
-    password: String,
-    expand: String? = null,
-    fields: String? = null,
-    body: Map<String, Any?> = emptyMap(),
-    query: Map<String, Any?> = emptyMap(),
-    headers: Map<String, String> = emptyMap(),
-)
-
-// Impersonates another record by ID (requires admin privileges).
-🔐 pb.collection(collectionIdOrName).impersonate(
-    id: String,
-    duration: Long? = null,
-    expand: String? = null,
-    fields: String? = null,
-    body: Map<String, Any?> = emptyMap(),
-    query: Map<String, Any?> = emptyMap(),
-    headers: Map<String, String> = emptyMap(),
-)
+pb.collection<User>("users").listAuthMethods(...)
+pb.collection<User>("users").authWithPassword(...)
+pb.collection<User>("users").authWithOAuth2Code(...)
+pb.collection<User>("users").authRefresh(...)
+pb.collection<User>("users").requestPasswordReset(email = "user@example.com", ...)
+pb.collection<User>("users").confirmPasswordReset(...)
+pb.collection<User>("users").requestEmailChange(...)
+pb.collection<User>("users").confirmEmailChange(...)
+pb.collection<User>("users").requestVerification(...)
+pb.collection<User>("users").confirmVerification(...)
+pb.collection<User>("users").requestOTP(...)
+pb.collection<User>("users").authWithOTP(...)
+pb.collection<User>("users").listExternalAuths(recordId = "RECORD_ID", ...)
+pb.collection<User>("users").unlinkExternalAuth(recordId = "RECORD_ID", provider = "google", ...)
+pb.collection<User>("users").impersonate(id = "RECORD_ID", duration = 120L, ...)
 ```
 
 ---
 
-##### FileService
+#### CollectionService
 
 ```kotlin
-// Builds and returns an absolute record file url for the provided filename.
-🔓 pb.files.getUrl(
-    record: RecordModel,
-    fileName: String,
-    thumb: String? = null,
-    token: String? = null,
-    download: Boolean? = null,
-    query: Map<String, Any?> = emptyMap(),
+pb.collections.getList(...)
+pb.collections.getFullList(...)
+pb.collections.getFirstListItem(filter = "name = 'users'", ...)
+pb.collections.getOne(id = "COLLECTION_ID", ...)
+pb.collections.create(body = collectionModel, ...)
+pb.collections.update(id = "COLLECTION_ID", body = collectionModel, ...)
+pb.collections.delete(id = "COLLECTION_ID", ...)
+pb.collections.import(collections = listOf(...), deleteMissing = false, ...)
+pb.collections.getScaffolds(...)
+pb.collections.truncate(collectionIdOrName = "example", ...)
+```
+
+---
+
+#### LogService
+
+```kotlin
+pb.logs.getList(...)
+pb.logs.getOne(id = "LOG_ID", ...)
+pb.logs.getStats(...)
+```
+
+---
+
+#### BackupService
+
+```kotlin
+pb.backups.getFullList(...)
+pb.backups.create(basename = "daily-backup", ...)
+pb.backups.upload(files = listOf(File(field = "file", fileName = "backup.zip", data = bytes)), ...)
+pb.backups.delete(key = "backup.zip", ...)
+pb.backups.restore(key = "backup.zip", ...)
+pb.backups.getDownloadURL(token = "TOKEN", key = "backup.zip")
+```
+
+---
+
+#### CronService
+
+```kotlin
+pb.crons.getFullList(...)
+pb.crons.run(jobId = "JOB_ID", ...)
+```
+
+---
+
+#### FileService
+
+```kotlin
+pb.files.getURL(
+    record = recordModel,
+    fileName = "image.jpg",
+    thumb = null,
+    token = null,
+    download = null,
+    query = emptyMap(),
 )
 
-// Requests a new private file access token for the current auth model.
-🔐 pb.files.getToken(
-    body: Any? = null,
-    query: Map<String, Any?> = emptyMap(),
-    headers: Map<String, String> = emptyMap(),
+pb.files.getToken(
+    body = null,
+    query = emptyMap(),
+    headers = emptyMap(),
 )
 ```
 
@@ -499,34 +437,16 @@ The supported placeholder parameter values are:
 
 #### BatchService
 
-> Execute multiple operations in a single atomic transaction.
-
-> The `AdminService` is removed in PocketBase v0.23+.
-> Admins are now regular records in the system `_superusers` collection.
-> You can use the standard `RecordService` methods to interact with them.
+> Execute multiple operations in a single request.
 
 ```kotlin
-// Create a new batch instance.
 val batch = pb.createBatch()
 
-// Queue operations on collections (returns SubBatchService).
-batch.collection<Example>("example").create(
-    body = Example(title = "Test"),
-)
-batch.collection<Example>("example").update(
-    recordId = "RECORD_ID",
-    body = Example(title = "Updated"),
-)
-batch.collection<Example>("example").delete(
-    recordId = "RECORD_ID",
-)
+batch.collection<Example>("example").create(body = Example(title = "Test"))
+batch.collection<Example>("example").update(recordId = "RECORD_ID", body = Example(title = "Updated"))
+batch.collection<Example>("example").delete(recordId = "RECORD_ID")
 
-// Execute all queued operations.
-🔓 batch.send(
-    body: Any? = null,
-    query: Map<String, Any?> = emptyMap(),
-    headers: Map<String, String> = emptyMap(),
-): List<BatchResult>
+val results: List<BatchResult> = batch.send()
 ```
 
 ---
@@ -534,64 +454,20 @@ batch.collection<Example>("example").delete(
 #### SettingsService
 
 ```kotlin
-// Returns a map with all available app settings.
-🔐 pb.settings.getAll()
-
-// Bulk updates app settings.
-🔐 pb.settings.update(settings: Settings): Settings
-
-// Performs a S3 storage connection test.
-🔐 pb.settings.testS3(filesystem: String)
-
-// Sends a test email (verification, password-reset, email-change).
-🔐 pb.settings.testEmail(
-    email: String,
-    template: String,
-)
-
-// Generates a new Apple OAuth2 client secret.
-🔐 pb.settings.generateAppleClientSecret(body: GenerateAppleClientSecretRequest): String
+pb.settings.getAll()
+pb.settings.update(settings = settingsModel)
+pb.settings.testS3(filesystem = "storage")
+pb.settings.testEmail(email = "user@example.com", template = "verification")
+pb.settings.testEmail(email = "user@example.com", template = "verification", collection = "users")
+pb.settings.generateAppleClientSecret(body = request)
 ```
 
----
-
-#### RealtimeService
-
-> This service is usually used with custom realtime actions.
-> For records realtime subscriptions you can use the subscribe/unsubscribe
-> methods available in the `pb.collection()` RecordService.
+#### HealthService
 
 ```kotlin
-// Initialize the realtime connection (if not already) and register the subscription.
-//
-// You can subscribe to the `PB_CONNECT` event if you want to listen to the realtime connection connect/reconnect events.
-🔓 pb.realtime.subscribe(
-    topic: String,
-    listener: SubscriptionFunc,
-    expand: String? = null,
-    filter: String? = null,
-    fields: String? = null,
-    query: Map<String, Any?> = emptyMap(),
-    headers: Map<String, String> = emptyMap(),
-)
-
-// Unsubscribe from a subscription (if empty - unsubscribe from all registered subscriptions).
-🔓 pb.realtime.unsubscribe(topic: String = "")
-
-// Unsubscribe from all subscriptions starting with the provided prefix.
-🔓 pb.realtime.unsubscribeByPrefix(topicPrefix: String)
-```
-
----
-
-##### HealthService
-
-```kotlin
-// Checks the health status of the api.
-🔓 pb.healthCheck.check(
-    query: Map<String, Any?> = emptyMap(),
-    headers: Map<String, String> = emptyMap(),
-)
+pb.health.check(query = emptyMap(), headers = emptyMap())
+// alias:
+pb.healthCheck.check()
 ```
 
 ---
