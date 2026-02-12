@@ -16,7 +16,7 @@ Kotlin SDK for interacting with the [PocketBase Web API](https://pocketbase.io/d
       - [_Realtime handlers_](#realtime-handlers)
       - [_Auth handlers_](#auth-handlers)
     - [FileService](#fileservice)
-    - [AdminService](#adminservice)
+    - [BatchService](#batchservice)
     - [SettingsService](#settingsservice)
     - [RealtimeService](#realtimeservice)
     - [HealthService](#healthservice)
@@ -30,7 +30,7 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("io.pocketbase:pocketbase:0.1.10")
+                implementation("io.pocketbase:pocketbase:0.1.11")
             }
         }
     }
@@ -52,8 +52,8 @@ val result = pb.collection<Example>("example").getList(
   perPage = 20,
   filter = "status = true && created >= \"2022-08-01\"",
   sort = "-created",
-  expand: "someRelField",
-);
+  expand = "someRelField",
+)
 
 // subscribe to realtime "example" collection changes
 pb.collection<Example>("example").subscribe(
@@ -73,16 +73,16 @@ pb.collection<Example>("example").subscribe(
 
 ### Swift Package Manager (iOS binary)
 
-This repository also publishes an iOS `XCFramework` binary for SwiftPM.
+This repository publishes an iOS `XCFramework` binary for SwiftPM via GitHub releases.
 
-Use the same repository URL, but pin an `-spm` tag:
+Add the dependency to your `Package.swift`:
 
 ```swift
 dependencies: [
-  .package(
-    url: "https://github.com/IdanAizikNissim/pocketbase-kt.git",
-    exact: "0.2.0-spm"
-  )
+    .package(
+        url: "https://github.com/IdanAizikNissim/pocketbase-kt.git",
+        from: "0.1.11"
+    )
 ]
 ```
 
@@ -91,8 +91,6 @@ Then add the product dependency:
 ```swift
 .product(name: "PocketBase", package: "pocketbase-kt")
 ```
-
-SPM tags follow the `${version}-spm` convention and are generated from the matching semver release tag (`${version}`).
 
 #### Local SwiftPM testing (`swiftApp`)
 
@@ -120,11 +118,9 @@ PocketBase Kotlin SDK handles file upload seamlessly by using ktor [submitFormWi
 Here is a simple example of uploading a single text file together with some other regular fields:
 
 ```kotlin
-
-
 val pb = PocketBase("http://127.0.0.1:8090")
 
-val record = pb.collection<Example>("Example").create(
+val record = pb.collection<Example>("example").create(
   body = Example(
     title = "Hello world!",
     // ... any other regular field
@@ -158,56 +154,48 @@ data class Example(
   val nested: String = "missing",
 )
 
-val record = pb.collection<Example>('example').getOne("RECORD_ID")
+val record = pb.collection<Example>("example").getOne("RECORD_ID")
 ```
 
 #### Error handling
 
-All services return a standard Future-based response, so the error handling is straightforward:
+All service methods are suspend functions, so use Kotlin coroutines for async operations:
 
 ```kotlin
-pb.collection('example').getList(page: 1, perPage: 50).then((result) {
-  // success...
-  print('Result: $result');
-}).catchError((error) {
-  // error...
-  print('Error: $error');
-});
-
-// OR if you are using the async/await syntax:
+// Using try/catch with coroutines
 try {
-  final result = await pb.collection('example').getList(page: 1, perPage: 50);
-} catch (error) {
-  print('Error: $error');
+    val result = pb.collection<Example>("example").getList(page = 1, perPage = 50)
+    println("Result: $result")
+} catch (e: ClientException) {
+    println("Error: ${e.message}")
 }
 ```
 
-All response errors are normalized and wrapped as `ClientException` with the following public members that you could use:
+All response errors are normalized and wrapped as `ClientException` with the following public members:
 
 ```kotlin
 data class ClientException(
-  val url:           String      // The address of the failed request
-  val statusCode:    Int         // The status code of the failed request
-  val data:          JsonObject  // The JSON API error response
-  val originError:   String      // The original response error
+    val statusCode: Int = 0,       // The status code of the failed request
+    val url: String = "",          // The address of the failed request
+    val data: JsonObject? = null,  // The JSON API error response
+    val originError: String? = null // The original response error
 )
 ```
 
 #### AuthStore
 
 The SDK keeps track of the authenticated token and auth model for you via the `pb.authStore` service.
-The default `AuthStore` class has the following public members that you could use:
+The default `AuthStore` class has the following public members:
 
 ```kotlin
-AuthStore {
-  token:    String                       // Getter for the stored auth token
-  model:    RecordModel|AdminModel|null  // Getter for the stored auth RecordModel or AdminModel
-  isValid   Boolean                      // Getter to loosely check if the store has an existing and unexpired token
-  onChange  Flow<AuthStoreEvent>         // Flow that gets triggered on each auth store change
+open class AuthStore {
+    var model: Model?                   // The stored auth RecordModel
+    var token: String                   // The stored auth token
+    val isValid: Boolean                // Checks if store has an unexpired JWT token
+    val onChange: Flow<AuthStoreEvent>  // Flow triggered on each auth store change
 
-  // methods
-  save(token, model)                     // update the store with the new auth data
-  clear()                                // clears the current auth store state
+    open fun save(newToken: String, newModel: Model)  // Update the store with new auth data
+    open fun clear()                                  // Clear the current auth store state
 }
 ```
 
@@ -231,35 +219,34 @@ Here is an example using [`multiplatform-settings`](https://github.com/russhwolf
 ```kotlin
 @Serializable
 data class User(
-  val username: String,
-  val name: String,
-  val verified: Boolean,
-): RecordModel()
+    val username: String,
+    val name: String,
+) : RecordModel()
 
 class MultiplatformSettingsAuthStore(
-  private val settings: Settings,
+    private val settings: Settings,
 ) {
-  val token: String?
-    get() = settings.getStringOrNull(TOKEN_KEY)
+    val token: String?
+        get() = settings.getStringOrNull(TOKEN_KEY)
 
-  fun save(token: String?) {
-    settings[TOKEN_KEY] = token
-  }
+    fun save(token: String?) {
+        settings[TOKEN_KEY] = token ?: ""
+    }
 
-  private companion object {
-    const val TOKEN_KEY = "token"
-  }
+    private companion object {
+        const val TOKEN_KEY = "token"
+    }
 }
 
 val mpSettingsAuthStore = MultiplatformSettingsAuthStore(
-  settings = get(), // expect val settings: Settings
+    settings = get(), // expect val settings: Settings
 )
 
 val store = RecordAsyncAuthStore(
-  cls = User::class,
-  save = mpSettingsAuthStore::save,
-  clear = { mpSettingsAuthStore.save(null) },
-  initial = mpSettingsAuthStore.token,
+    cls = User::class,
+    save = mpSettingsAuthStore::save,
+    clear = { mpSettingsAuthStore.save(null) },
+    initial = mpSettingsAuthStore.token,
 )
 
 val pb = PocketBase("http://example.com", authStore = store)
@@ -274,7 +261,7 @@ val records = pb.collection<Example>("example").getList(filter = pb.filter(
   // the same as: "title ~ 'exa\\'mple' && created = '2023-10-18 18:20:00.123Z'"
   expr = "title ~ {:title} && created >= {:created}",
   query = mapOf("title" to "exa'mple", "created" to Clock.System.now()),
-));
+))
 ```
 
 The supported placeholder parameter values are:
@@ -295,72 +282,73 @@ The supported placeholder parameter values are:
 ```kotlin
 // Returns a paginated records list.
 🔓 pb.collection<T: RecordModel>(collectionIdOrName).getList(
-  page: Int = 1,
-  perPage: Int = 30,
-  skipTotal: Boolean = false,
-  expand: String? = null,
-  filter: String? = null,
-  sort: String? = null,
-  fields: String? = null,
-  query: Map<String, Any?> = emptyMap(),
-  headers: Map<String, String> = emptyMap(),
+    page: Int = 1,
+    perPage: Int = 30,
+    skipTotal: Boolean = false,
+    expand: String? = null,
+    filter: String? = null,
+    sort: String? = null,
+    fields: String? = null,
+    query: Map<String, Any?> = emptyMap(),
+    headers: Map<String, String> = emptyMap(),
 )
 
 // Returns a list with all records batch fetched at once.
 🔓 pb.collection<T: RecordModel>(collectionIdOrName).getFullList(
-  batch: Int = 500,
-  expand: String? = null,
-  filter: String? = null,
-  sort: String? = null,
-  fields: String? = null,
-  query: Map<String, Any?> = emptyMap(),
-  headers: Map<String, String> = emptyMap(),
+    batch: Int = 500,
+    expand: String? = null,
+    filter: String? = null,
+    sort: String? = null,
+    fields: String? = null,
+    query: Map<String, Any?> = emptyMap(),
+    headers: Map<String, String> = emptyMap(),
 )
 
 // Returns the first found record matching the specified filter.
 🔓 pb.collection<T: RecordModel>(collectionIdOrName).getFirstListItem(
-  filter: String,
-  expand: String? = null,
-  fields: String? = null,
-  query: Map<String, Any?> = emptyMap(),
-  headers: Map<String, String> = emptyMap(),
+    filter: String,
+    expand: String? = null,
+    fields: String? = null,
+    query: Map<String, Any?> = emptyMap(),
+    headers: Map<String, String> = emptyMap(),
 )
 
 // Returns a single record by its id.
 🔓 pb.collection<T: RecordModel>(collectionIdOrName).getOne(
-  id: String,
-  expand: String? = null,
-  fields: String? = null,
-  query: Map<String, Any?> = emptyMap(),
-  headers: Map<String, String> = emptyMap(),
+    id: String,
+    expand: String? = null,
+    fields: String? = null,
+    query: Map<String, Any?> = emptyMap(),
+    headers: Map<String, String> = emptyMap(),
 )
 
 // Creates (aka. register) a new record.
 🔓 pb.collection<T: RecordModel>(collectionIdOrName).create(
-  body: T? = null,
-  expand: String? = null,
-  fields: String? = null,
-  query: Map<String, Any?> = emptyMap(),
-  headers: Map<String, String> = emptyMap(),
-  files: List<File> = emptyList(),
+    body: T? = null,
+    expand: String? = null,
+    fields: String? = null,
+    query: Map<String, Any?> = emptyMap(),
+    headers: Map<String, String> = emptyMap(),
+    files: List<File> = emptyList(),
 )
 
 // Updates an existing record by its id.
 🔓 pb.collection<T: RecordModel>(collectionIdOrName).update(
-  id: String,
-  body: T? = null,
-  expand: String? = null,
-  fields: String? = null,
-  query: Map<String, Any?> = emptyMap(),
-  headers: Map<String, String> = emptyMap(),
+    id: String,
+    body: T? = null,
+    expand: String? = null,
+    fields: String? = null,
+    query: Map<String, Any?> = emptyMap(),
+    headers: Map<String, String> = emptyMap(),
+    files: List<File> = emptyList(),
 )
 
 // Deletes a single record by its id.
 🔓 pb.collection<T: RecordModel>(collectionIdOrName).delete(
-  id: String,
-  body: T? = null,
-  query: Map<String, Any?> = emptyMap(),
-  headers: Map<String, String> = emptyMap(),
+    id: String,
+    body: Any? = null,
+    query: Map<String, Any?> = emptyMap(),
+    headers: Map<String, String> = emptyMap(),
 )
 ```
 
@@ -373,14 +361,14 @@ The supported placeholder parameter values are:
 //
 // You can use the returned UnsubscribeFunc to remove a single registered subscription.
 // If you want to remove all subscriptions related to the topic use unsubscribe(topic).
-🔓 pb.collection<T>(collectionIdOrName)subscribe(
-  topic: String,
-  callback: (event: RecordSubscriptionEvent<T>) -> Unit,
-  expand: String? = null,
-  filter: String? = null,
-  fields: String? = null,
-  query: Map<String, Any?> = emptyMap(),
-  headers: Map<String, String> = emptyMap(),
+🔓 pb.collection<T>(collectionIdOrName).subscribe(
+    topic: String,
+    callback: (event: RecordSubscriptionEvent<T>) -> Unit,
+    expand: String? = null,
+    filter: String? = null,
+    fields: String? = null,
+    query: Map<String, Any?> = emptyMap(),
+    headers: Map<String, String> = emptyMap(),
 )
 
 // Unsubscribe from all registered subscriptions to the specified topic ("*" or recordId).
@@ -395,62 +383,92 @@ The supported placeholder parameter values are:
 ```kotlin
 // Returns all available application auth methods.
 🔓 pb.collection(collectionIdOrName).listAuthMethods(
-  query: Map<String, Any?> = emptyMap(),
-  headers: Map<String, String> = emptyMap(),
+    query: Map<String, Any?> = emptyMap(),
+    headers: Map<String, String> = emptyMap(),
 )
 
 // Authenticates a record with their username/email and password.
 🔓 pb.collection(collectionIdOrName).authWithPassword(
-  usernameOrEmail: String,
-  password: String,
-  expand: String? = null,
-  fields: String? = null,
-  body: Map<String, Any?> = emptyMap(),
-  query: Map<String, Any?> = emptyMap(),
-  headers: Map<String, String> = emptyMap(),
+    usernameOrEmail: String,
+    password: String,
+    expand: String? = null,
+    fields: String? = null,
+    body: Map<String, Any?> = emptyMap(),
+    query: Map<String, Any?> = emptyMap(),
+    headers: Map<String, String> = emptyMap(),
 )
 
 // Refreshes the current authenticated record model and auth token.
 🔐 pb.collection(collectionIdOrName).authRefresh(
-  expand: String? = null,
-  fields: String? = null,
-  body: Map<String, Any?> = emptyMap(),
-  query: Map<String, Any?> = emptyMap(),
-  headers: Map<String, String> = emptyMap(),
+    expand: String? = null,
+    fields: String? = null,
+    body: Map<String, Any?> = emptyMap(),
+    query: Map<String, Any?> = emptyMap(),
+    headers: Map<String, String> = emptyMap(),
 )
 
 // Sends a user password reset email.
 🔓 pb.collection(collectionIdOrName).requestPasswordReset(
-  email: String,
-  body: Map<String, Any?> = emptyMap(),
-  query: Map<String, Any?> = emptyMap(),
-  headers: Map<String, String> = emptyMap(),
+    email: String,
+    body: Map<String, Any?> = emptyMap(),
+    query: Map<String, Any?> = emptyMap(),
+    headers: Map<String, String> = emptyMap(),
 )
 
 // Confirms a record password reset request.
 🔓 pb.collection(collectionIdOrName).confirmPasswordReset(
-  passwordResetToken: String,
-  password: String,
-  passwordConfirm: String,
-  body: Map<String, Any?> = emptyMap(),
-  query: Map<String, Any?> = emptyMap(),
-  headers: Map<String, String> = emptyMap(),
+    passwordResetToken: String,
+    password: String,
+    passwordConfirm: String,
+    body: Map<String, Any?> = emptyMap(),
+    query: Map<String, Any?> = emptyMap(),
+    headers: Map<String, String> = emptyMap(),
 )
 
 // Sends a record verification email request.
 🔓 pb.collection(collectionIdOrName).requestVerification(
-  email: String,
-  body: Map<String, Any?> = emptyMap(),
-  query: Map<String, Any?> = emptyMap(),
-  headers: Map<String, String> = emptyMap(),
+    email: String,
+    body: Map<String, Any?> = emptyMap(),
+    query: Map<String, Any?> = emptyMap(),
+    headers: Map<String, String> = emptyMap(),
 )
 
 // Confirms a record email verification request.
 🔓 pb.collection(collectionIdOrName).confirmVerification(
-  verificationToken: String,
-  body: Map<String, Any?> = emptyMap(),
-  query: Map<String, Any?> = emptyMap(),
-  headers: Map<String, String> = emptyMap(),
+    verificationToken: String,
+    body: Map<String, Any?> = emptyMap(),
+    query: Map<String, Any?> = emptyMap(),
+    headers: Map<String, String> = emptyMap(),
+)
+
+// Requests a one-time password for authentication.
+🔓 pb.collection(collectionIdOrName).requestOTP(
+    email: String,
+    body: Map<String, Any?> = emptyMap(),
+    query: Map<String, Any?> = emptyMap(),
+    headers: Map<String, String> = emptyMap(),
+)
+
+// Authenticates with a one-time password.
+🔓 pb.collection(collectionIdOrName).authWithOTP(
+    otpId: String,
+    password: String,
+    expand: String? = null,
+    fields: String? = null,
+    body: Map<String, Any?> = emptyMap(),
+    query: Map<String, Any?> = emptyMap(),
+    headers: Map<String, String> = emptyMap(),
+)
+
+// Impersonates another record by ID (requires admin privileges).
+🔐 pb.collection(collectionIdOrName).impersonate(
+    id: String,
+    duration: Long? = null,
+    expand: String? = null,
+    fields: String? = null,
+    body: Map<String, Any?> = emptyMap(),
+    query: Map<String, Any?> = emptyMap(),
+    headers: Map<String, String> = emptyMap(),
 )
 ```
 
@@ -460,131 +478,51 @@ The supported placeholder parameter values are:
 
 ```kotlin
 // Builds and returns an absolute record file url for the provided filename.
-🔓 pb.files.getUrlgetUrl(
-  record: RecordModel,
-  fileName: String,
-  thumb: String? = null,
-  token: String? = null,
-  download: Boolean? = null,
-  query: Map<String, Any?> = emptyMap(),
+🔓 pb.files.getUrl(
+    record: RecordModel,
+    fileName: String,
+    thumb: String? = null,
+    token: String? = null,
+    download: Boolean? = null,
+    query: Map<String, Any?> = emptyMap(),
 )
 
-// Requests a new private file access token for the current auth model (admin or record).
+// Requests a new private file access token for the current auth model.
 🔐 pb.files.getToken(
-  body: @Serializable Any? = null,
-  query: Map<String, Any?> = emptyMap(),
-  headers: Map<String, String> = emptyMap(),
+    body: Any? = null,
+    query: Map<String, Any?> = emptyMap(),
+    headers: Map<String, String> = emptyMap(),
 )
 ```
 
 ---
 
-#### AdminService
+#### BatchService
+
+> Execute multiple operations in a single atomic transaction.
 
 ```kotlin
-// Authenticates an admin account by its email and password.
-🔓 pb.admins.authWithPassword(
-  email: String,
-  password: String,
-  body: Map<String, Any?> = emptyMap(),
-  query: Map<String, Any?> = emptyMap(),
-  headers: Map<String, String> = emptyMap(),
+// Create a new batch instance.
+val batch = pb.createBatch()
+
+// Queue operations on collections (returns SubBatchService).
+batch.collection<Example>("example").create(
+    body = Example(title = "Test"),
+)
+batch.collection<Example>("example").update(
+    recordId = "RECORD_ID",
+    body = Example(title = "Updated"),
+)
+batch.collection<Example>("example").delete(
+    recordId = "RECORD_ID",
 )
 
-// Refreshes the current admin authenticated model and token.
-🔐 pb.admins.authRefresh(
-  body: Map<String, Any?> = emptyMap(),
-  query: Map<String, Any?> = emptyMap(),
-  headers: Map<String, String> = emptyMap(),
-)
-
-// Sends an admin password reset email.
-🔓 pb.admins.requestPasswordReset(
-  email: String,
-  body: Map<String, Any?> = emptyMap(),
-  query: Map<String, Any?> = emptyMap(),
-  headers: Map<String, String> = emptyMap(),
-)
-
-// Confirms an admin password reset request.
-🔓 pb.admins.confirmPasswordReset(
-  passwordResetToken: String,
-  password: String,
-  passwordConfirm: String,
-  body: Map<String, Any?> = emptyMap(),
-  query: Map<String, Any?> = emptyMap(),
-  headers: Map<String, String> = emptyMap(),
-)
-
-// Returns a paginated admins list.
-🔐 pb.admins.getList(
-  page: Int = 1,
-  perPage: Int = 30,
-  skipTotal: Boolean = false,
-  expand: String? = null,
-  filter: String? = null,
-  sort: String? = null,
-  fields: String? = null,
-  query: Map<String, Any?> = emptyMap(),
-  headers: Map<String, String> = emptyMap(),
-)
-
-// Returns a list with all admins batch fetched at once.
-🔐 pb.admins.getFullList(
-  batch: Int = 500,
-  expand: String? = null,
-  filter: String? = null,
-  sort: String? = null,
-  fields: String? = null,
-  query: Map<String, Any?> = emptyMap(),
-  headers: Map<String, String> = emptyMap(),
-)
-
-// Returns the first found admin matching the specified filter.
-🔐 pb.admins.getFirstListItem(
-  filter: String,
-  expand: String? = null,
-  fields: String? = null,
-  query: Map<String, Any?> = emptyMap(),
-  headers: Map<String, String> = emptyMap(),
-)
-
-// Returns a single admin by their id.
-🔐 pb.admins.getOne(
-  id: String,
-  expand: String? = null,
-  fields: String? = null,
-  query: Map<String, Any?> = emptyMap(),
-  headers: Map<String, String> = emptyMap(),
-)
-
-// Creates a new admin.
-🔐 pb.admins.create(
-  body: T? = null,
-  expand: String? = null,
-  fields: String? = null,
-  query: Map<String, Any?> = emptyMap(),
-  headers: Map<String, String> = emptyMap(),
-  files: List<File> = emptyList(),
-)
-
-// Updates an existing admin by their id.
-🔐 pb.admins.update(
-  id: String,
-  body: AdminModel?,
-  expand: String?,
-  fields: String?,
-  query: Map<String, Any?>,
-  headers: Map<String, String>,
-)
-
-// Deletes a single admin by their id.
-🔐 pb.admins.delete(
-  id: String,
-  body: AdminModel?,
-  query: Map<String, Any?>,
-  headers: Map<String, String>,
-)
+// Execute all queued operations.
+🔓 batch.send(
+    body: Any? = null,
+    query: Map<String, Any?> = emptyMap(),
+    headers: Map<String, String> = emptyMap(),
+): List<BatchResult>
 ```
 
 ---
@@ -603,9 +541,9 @@ The supported placeholder parameter values are:
 
 // Sends a test email (verification, password-reset, email-change).
 🔐 pb.settings.testEmail(
-  email: String,
-  template: String,
-);
+    email: String,
+    template: String,
+)
 
 // Generates a new Apple OAuth2 client secret.
 🔐 pb.settings.generateAppleClientSecret(body: GenerateAppleClientSecretRequest): String
@@ -624,16 +562,16 @@ The supported placeholder parameter values are:
 //
 // You can subscribe to the `PB_CONNECT` event if you want to listen to the realtime connection connect/reconnect events.
 🔓 pb.realtime.subscribe(
-  topic: String,
-  listener: SubscriptionFunc,
-  expand: String? = null,
-  filter: String? = null,
-  fields: String? = null,
-  query: Map<String, Any?> = emptyMap(),
-  headers: Map<String, String> = emptyMap(),
+    topic: String,
+    listener: SubscriptionFunc,
+    expand: String? = null,
+    filter: String? = null,
+    fields: String? = null,
+    query: Map<String, Any?> = emptyMap(),
+    headers: Map<String, String> = emptyMap(),
 )
 
-// Unsubscribe from a subscription (if empty - unsubscibe from all registered subscriptions).
+// Unsubscribe from a subscription (if empty - unsubscribe from all registered subscriptions).
 🔓 pb.realtime.unsubscribe(topic: String = "")
 
 // Unsubscribe from all subscriptions starting with the provided prefix.
@@ -646,9 +584,9 @@ The supported placeholder parameter values are:
 
 ```kotlin
 // Checks the health status of the api.
-🔓 pb.healthCheck.checkcheck(
-  query: Map<String, Any?> = emptyMap(),
-  headers: Map<String, String> = emptyMap(),
+🔓 pb.healthCheck.check(
+    query: Map<String, Any?> = emptyMap(),
+    headers: Map<String, String> = emptyMap(),
 )
 ```
 
