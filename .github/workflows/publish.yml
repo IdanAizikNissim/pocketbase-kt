@@ -10,6 +10,9 @@ jobs:
   build:
     name: Build
     runs-on: macos-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -43,8 +46,8 @@ jobs:
       - name: Add Gradle Properties
         if: steps.version.outputs.is_semver == 'true'
         env:
-          GITHUB_PACKAGES_USER_NAME: ${{ secrets.GH_PACKAGES_USER_NAME }}
-          GITHUB_PACKAGES_PASSWORD: ${{ secrets.GH_PACKAGES_PASSWORD }}
+          GITHUB_PACKAGES_USER_NAME: ${{ github.actor }}
+          GITHUB_PACKAGES_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           echo "githubPackagesUsername=${GITHUB_PACKAGES_USER_NAME}" >> gradle.properties
