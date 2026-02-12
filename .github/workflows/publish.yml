@@ -1,6 +1,9 @@
 name: Publish Artifacts
 
 on:
+  push:
+    tags:
+      - '*'
   workflow_dispatch:
 
 jobs:
@@ -11,18 +14,34 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Resolve release version
+        id: version
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME}"
+          if [[ ! "${VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Skipping non-semver tag: ${VERSION}"
+            echo "is_semver=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "is_semver=true" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
       - name: Setup Java
+        if: steps.version.outputs.is_semver == 'true'
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
       - name: Gradle
+        if: steps.version.outputs.is_semver == 'true'
         uses: gradle/gradle-build-action@v2
         with:
           gradle-version: 8.13
 
       - name: Add Gradle Properties
+        if: steps.version.outputs.is_semver == 'true'
         env:
           GITHUB_PACKAGES_USER_NAME: ${{ secrets.GH_PACKAGES_USER_NAME }}
           GITHUB_PACKAGES_PASSWORD: ${{ secrets.GH_PACKAGES_PASSWORD }}
@@ -31,11 +50,13 @@ jobs:
           echo "githubPackagesPassword=${GITHUB_PACKAGES_PASSWORD}" >> gradle.properties
 
       - name: Setup Xcode
+        if: steps.version.outputs.is_semver == 'true'
         uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: latest-stable
 
       - name: Publish To GitHub Packages
+        if: steps.version.outputs.is_semver == 'true'
         run: |
           ./gradlew publishAllPublicationsToGithubPackagesRepository
 
