@@ -45,9 +45,11 @@ jobs:
         env:
           GITHUB_PACKAGES_USER_NAME: ${{ secrets.GH_PACKAGES_USER_NAME }}
           GITHUB_PACKAGES_PASSWORD: ${{ secrets.GH_PACKAGES_PASSWORD }}
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
           echo "githubPackagesUsername=${GITHUB_PACKAGES_USER_NAME}" >> gradle.properties
           echo "githubPackagesPassword=${GITHUB_PACKAGES_PASSWORD}" >> gradle.properties
+          echo "LIBRARY_VERSION=${VERSION}" >> gradle.properties
 
       - name: Setup Xcode
         if: steps.version.outputs.is_semver == 'true'
