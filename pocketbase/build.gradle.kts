@@ -38,34 +38,48 @@ kotlin {
     jvm("desktop")
 
     sourceSets {
-        commonMain.dependencies {
-            implementation(libs.kotlinx.serialization.core)
-            implementation(libs.kotlinx.serialization.json)
-            implementation(libs.kotlinx.datetime)
-            implementation(libs.ktor.core)
-            implementation(libs.ktor.client.cio)
-            implementation(libs.ktor.client.logging)
-            implementation(libs.ktor.client.content.negotiation)
-            implementation(libs.ktor.serialization.kotlinx.json)
+        val commonMain by getting {
+            dependencies {
+                implementation(libs.kotlinx.serialization.core)
+                implementation(libs.kotlinx.serialization.json)
+                implementation(libs.kotlinx.datetime)
+                implementation(libs.ktor.core)
+                implementation(libs.ktor.client.cio)
+                implementation(libs.ktor.client.logging)
+                implementation(libs.ktor.client.content.negotiation)
+                implementation(libs.ktor.serialization.kotlinx.json)
+            }
         }
-        commonTest.dependencies {
-            implementation(libs.kotlin.test)
-            implementation(libs.kotlinx.coroutines.test)
-            implementation(libs.kotlinx.datetime)
-            implementation(libs.kotlinx.serialization.core)
-            implementation(libs.kotlinx.serialization.json)
-            implementation(libs.ktor.serialization.kotlinx.json)
-            implementation(libs.ktor.client.test)
+
+        val commonTest by getting {
+            dependencies {
+                implementation(libs.kotlin.test)
+                implementation(libs.kotlinx.coroutines.test)
+                implementation(libs.kotlinx.datetime)
+                implementation(libs.kotlinx.serialization.core)
+                implementation(libs.kotlinx.serialization.json)
+                implementation(libs.ktor.serialization.kotlinx.json)
+                implementation(libs.ktor.client.test)
+            }
         }
-        androidMain.dependencies {
-            implementation(libs.ktor.client.android)
+
+        val androidMain by getting {
+            dependencies {
+                implementation(libs.ktor.client.android)
+            }
         }
-        iosMain.dependencies {
-            implementation(libs.ktor.client.darwin)
+
+        val appleMain by creating {
+            dependsOn(commonMain)
+            dependencies {
+                implementation(libs.ktor.client.darwin)
+            }
         }
-        macosMain.dependencies {
-            implementation(libs.ktor.client.darwin)
-        }
+        val iosX64Main by getting { dependsOn(appleMain) }
+        val iosArm64Main by getting { dependsOn(appleMain) }
+        val iosSimulatorArm64Main by getting { dependsOn(appleMain) }
+        val macosX64Main by getting { dependsOn(appleMain) }
+        val macosArm64Main by getting { dependsOn(appleMain) }
 
         val desktopMain by getting
         desktopMain.dependencies {
