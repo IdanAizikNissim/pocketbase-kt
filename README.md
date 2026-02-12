@@ -71,6 +71,46 @@ pb.collection<Example>("example").subscribe(
 > More detailed API docs and copy-paste examples could be found in the [API documentation for each service](https://pocketbase.io/docs/api-authentication)
 > or in the [Services section](#services) below.
 
+### Swift Package Manager (iOS binary)
+
+This repository also publishes an iOS `XCFramework` binary for SwiftPM.
+
+Use the same repository URL, but pin an `-spm` tag:
+
+```swift
+dependencies: [
+  .package(
+    url: "https://github.com/IdanAizikNissim/pocketbase-kt.git",
+    exact: "0.2.0-spm"
+  )
+]
+```
+
+Then add the product dependency:
+
+```swift
+.product(name: "PocketBase", package: "pocketbase-kt")
+```
+
+SPM tags follow the `${version}-spm` convention and are generated from the matching semver release tag (`${version}`).
+
+#### Local SwiftPM testing (`swiftApp`)
+
+From the repository root, build the local XCFramework:
+
+```bash
+./scripts/build-local-spm.sh
+```
+
+Then in Xcode:
+
+1. Open `swiftApp/swiftApp.xcodeproj`.
+2. Go to `File` -> `Add Package Dependencies...`.
+3. Click `Add Local...` and choose this repository root (`pocketbase-kt`).
+4. Add product `PocketBase` to the `swiftApp` target.
+
+When `pocketbase/build/XCFrameworks/release/PocketBase.xcframework` exists, `Package.swift` automatically uses it as a local `binaryTarget`.
+
 ## Caveats
 
 #### File upload
