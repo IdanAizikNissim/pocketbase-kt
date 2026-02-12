@@ -16,8 +16,8 @@ let pocketBaseTarget: Target = useLocalXCFramework
     )
     : .binaryTarget(
         name: "PocketBase",
-        url: "https://github.com/IdanAizikNissim/pocketbase-kt/releases/download/0.2.1/PocketBase.xcframework.zip",
-        checksum: "3177537e6f1285414b28dbafadc37e90014edba911c14e5d74f9ca043490ffed"
+        url: "https://github.com/IdanAizikNissim/pocketbase-kt/releases/download/0.2.2/PocketBase.xcframework.zip",
+        checksum: "e34ee07ddccca2ceef92641f4e6b38d2556536551dfa65316208f774016fe1ac"
     )
 
 let package = Package(
