@@ -291,7 +291,7 @@ private struct TodoDetailView: View {
             todo = loaded
             text = loaded.text
             completed = loaded.completed
-            attachmentURL = await viewModel.attachmentURL(for: loaded)
+            attachmentURL = viewModel.attachmentURL(for: loaded)
         } catch {
             viewModel.errorMessage = "Could not load todo: \(error.localizedDescription)"
         }

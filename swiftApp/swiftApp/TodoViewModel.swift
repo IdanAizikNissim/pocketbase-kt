@@ -109,7 +109,7 @@ final class TodoViewModel: ObservableObject {
         }
     }
 
-    func attachmentURL(for todo: TodoRecord) async -> URL? {
-        await service.attachmentURL(for: todo)
+    func attachmentURL(for todo: TodoRecord) -> URL? {
+        service.attachmentURL(for: todo)
     }
 }

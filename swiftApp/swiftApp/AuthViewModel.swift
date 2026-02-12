@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import PocketBase
 
 @MainActor
 final class AuthViewModel: ObservableObject {
@@ -23,7 +24,7 @@ final class AuthViewModel: ObservableObject {
     init(service: PocketBaseService) {
         self.service = service
         Task {
-            isLoggedIn = await service.isLoggedIn()
+            isLoggedIn = service.isLoggedIn()
         }
     }
 
@@ -67,7 +68,7 @@ final class AuthViewModel: ObservableObject {
         Task {
             defer { isLoading = false }
             do {
-                try await service.requestPasswordReset(email: email)
+                try await service.requestPasswordResetForApp(email: email)
                 infoMessage = "Password reset email sent."
             } catch {
                 errorMessage = "Request failed: \(error.localizedDescription)"

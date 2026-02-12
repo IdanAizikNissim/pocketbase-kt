@@ -12,6 +12,7 @@ import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.URLProtocol
+import io.ktor.http.content.TextContent
 import io.ktor.http.contentType
 import io.ktor.http.encodeURLParameter
 import io.ktor.http.fullPath
@@ -72,7 +73,12 @@ internal class HttpClient(
 
                 body?.let {
                     contentType(ContentType.Application.Json)
-                    setBody(it)
+                    if (it is String) {
+                        // JSON bridge APIs pass already-serialized JSON payload strings.
+                        setBody(TextContent(it, ContentType.Application.Json))
+                    } else {
+                        setBody(it)
+                    }
                 }
             }
         } else {
