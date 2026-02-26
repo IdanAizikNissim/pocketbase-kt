@@ -60,7 +60,11 @@ open class AuthStore {
 data class AuthStoreEvent internal constructor(
     val token: String,
     val model: Model?,
-)
+) {
+    override fun toString(): String {
+        return "AuthStoreEvent(token=***, model=$model)"
+    }
+}
 
 internal fun normalizeBase64(base64: String): String {
     val noWhitespace = base64.replace("\\s".toRegex(), "")
