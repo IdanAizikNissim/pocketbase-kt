@@ -2,39 +2,60 @@ package io.pocketbase.utils
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 typealias AsyncOperation = suspend () -> Unit
 
 class SyncQueue internal constructor(
     private val onComplete: (() -> Unit)? = null,
 ) : CoroutineScope by CoroutineScope(Dispatchers.IO) {
-    private val operations: MutableList<AsyncOperation> = mutableListOf()
+    private val channel = Channel<AsyncOperation>(Channel.UNLIMITED)
+    private val mutex = Mutex()
+    private var isRunning = false
 
     fun enqueue(op: AsyncOperation) {
-        operations.add(op)
+        channel.trySend(op)
 
-        if (operations.size == 1) {
-            dequeue()
+        launch {
+            mutex.withLock {
+                if (!isRunning) {
+                    isRunning = true
+                    processQueue()
+                }
+            }
         }
     }
 
-    private fun dequeue() {
-        if (operations.isEmpty()) {
-            return
-        }
-
+    private fun processQueue() {
         launch {
-            operations.first().invoke()
-            operations.removeAt(0)
+            while (true) {
+                val result = channel.tryReceive()
+                val op = result.getOrNull()
 
-            if (operations.isEmpty()) {
-                onComplete?.invoke()
-                return@launch
+                if (op != null) {
+                    try {
+                        op.invoke()
+                    } catch (e: Exception) {
+                        // If an operation fails, we continue processing the queue
+                    }
+                } else {
+                    var shouldStop = false
+                    mutex.withLock {
+                        if (channel.isEmpty) {
+                            isRunning = false
+                            shouldStop = true
+                        }
+                    }
+
+                    if (shouldStop) {
+                        onComplete?.invoke()
+                        break
+                    }
+                }
             }
-
-            dequeue()
         }
     }
 }
